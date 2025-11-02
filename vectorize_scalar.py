@@ -1,9 +1,7 @@
 """
-This file contain function vectorize features B, D, G, H into scalar
+This file contain functions vectorize features B, D, G, H into scalar
 """
 
-import numpy as np
-import pandas as pd
 import re
 
 FILE_NAME = "training_data_clean.csv"
@@ -23,16 +21,36 @@ def extract_rating(response):
 
 
 def vectorize_B(dataframe):
+    """
+    Replace dataframe's FEATURE_B column's text entry with scalar in place
+    :param dataframe: panda dataframe representing training data
+    :return: void
+    """
     dataframe[FEATURE_B] = dataframe[FEATURE_B].apply(extract_rating)
 
 
 def vectorize_D(dataframe):
+    """
+    Replace dataframe's FEATURE_D column's text entry with scalar in place
+    :param dataframe: panda dataframe representing training data
+    :return: void
+    """
     dataframe[FEATURE_D] = dataframe[FEATURE_D].apply(extract_rating)
 
 
 def vectorize_G(dataframe):
+    """
+    Replace dataframe's FEATURE_G column's text entry with scalar in place
+    :param dataframe: panda dataframe representing training data
+    :return: void
+    """
     dataframe[FEATURE_G] = dataframe[FEATURE_G].apply(extract_rating)
 
 
 def vectorize_H(dataframe):
+    """
+    Replace dataframe's FEATURE_H column's text entry with scalar in place
+    :param dataframe: panda dataframe representing training data
+    :return: void
+    """
     dataframe[FEATURE_H] = dataframe[FEATURE_H].apply(extract_rating)
