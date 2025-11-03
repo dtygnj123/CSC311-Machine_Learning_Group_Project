@@ -130,7 +130,7 @@ def vectorize_realG(df):
     """
     Vectorize FEATURE_realG (column G) manually into a bag-of-words matrix.
     df: pandas DataFrame containing FEATURE_realG column.
-    n: number of lines (of word in WORD_COUNT_FILE_G) to include below the 'coding' anchor word.
+    N_WORDS_AFTER_CODING: number of lines (of word in WORD_COUNT_FILE_G) to include below the 'coding' anchor word.
     If 'coding' is the first word, this takes the top n words.
 
     Reads WORD_COUNT_FILE_G for vocabulary selection.
