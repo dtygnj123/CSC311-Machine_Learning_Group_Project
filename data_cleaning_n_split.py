@@ -150,6 +150,8 @@ def clean_text_select_words(dataframe, columns, threshold):
     Select the words with a hyperparameter. Not including the words in remove_words.
     """
 
+    df_AFI = []
+
     for col in columns:
         counts = get_word_counts(dataframe[col])
 
@@ -169,9 +171,10 @@ def clean_text_select_words(dataframe, columns, threshold):
 
         # Save to CSV
         top_less_than_code.to_csv(f"csv_files/{col}_rare_words.csv", index=False)
+        df_AFI.append(top_less_than_code)
         print(f"Saved {col}_rare_words.csv with {len(word_set)} words (less frequent than 'code')")
 
-    return dataframe
+    return dataframe, df_AFI[0], df_AFI[1], df_AFI[2]
 
 
 def clean_text_select_word_helper(s: str, word_set: set) -> str:

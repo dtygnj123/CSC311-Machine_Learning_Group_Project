@@ -31,7 +31,7 @@ def main():
     data_cleaning_n_split.remove_incomplete_row(df)
     df = data_cleaning_n_split.lower_casing(df)
     df = data_cleaning_n_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
-    df = data_cleaning_n_split.clean_text_select_words(df, TEXT_COL, threshold=200)
+    df, df_a, df_f, df_i = data_cleaning_n_split.clean_text_select_words(df, TEXT_COL, threshold=200)
     df.to_csv("csv_files/only_selected_words.csv", index=False) # for debug
     vectorize_scalar.vectorize_B(df)
     vectorize_scalar.vectorize_D(df)
