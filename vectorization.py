@@ -16,6 +16,7 @@ FEATURE_H = "How often do you verify this model's responses?"
 
 WORD_COUNT_FILE_G = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal_word_counts.csv"
 FEATURE_realG = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
+N_WORDS_AFTER_CODING = 100
 
 TARGET_TASKS = [
         'math computations',
@@ -125,7 +126,7 @@ def vectorize_H(df):
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
 
 
-def vectorize_realG(df, n=50):
+def vectorize_realG(df):
     """
     Vectorize FEATURE_realG (column G) manually into a bag-of-words matrix.
     df: pandas DataFrame containing FEATURE_realG column.
@@ -146,10 +147,10 @@ def vectorize_realG(df, n=50):
         raise ValueError("'coding' not found in word-count file.")
     coding_idx = coding_idx_list[0]
 
-    end_idx = min(coding_idx + n, len(word_counts))
+    end_idx = min(coding_idx + N_WORDS_AFTER_CODING, len(word_counts))
     vocab = word_counts[word_col].iloc[coding_idx:end_idx].str.lower().tolist()
 
-    print(f"Vocabulary size (hyperparameter): {len(vocab)} words starting from 'coding' (up to {n})")
+    print(f"Vocabulary size (hyperparameter): {len(vocab)} words starting from 'coding' (up to {N_WORDS_AFTER_CODING})")
 
     if FEATURE_realG not in df.columns:
         raise KeyError(f"Column '{FEATURE_realG}' not found in DataFrame.")

@@ -44,7 +44,7 @@ def main():
     vectorization.vectorize_G(df)
     vectorization.vectorize_H(df)
 
-    vectorization.vectorize_realG(df, 50)
+    vectorization.vectorize_realG(df)
 
     df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
     print("Training data:\n", df_train)
