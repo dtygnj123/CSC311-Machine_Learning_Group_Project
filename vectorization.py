@@ -1,7 +1,7 @@
 """
 This file contains functions to vectorize features.
 """
-
+import numpy as np
 import pandas as pd
 import re
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -13,6 +13,10 @@ FEATURE_D = "Based on your experience, how often has this model given you a resp
 FEATURE_E = "For which types of tasks do you feel this model tends to give suboptimal responses? (Select all that apply.)"
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
+
+WORD_COUNT_FILE_G = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal_word_counts.csv"
+FEATURE_realG = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
+
 TARGET_TASKS = [
         'math computations',
         'data processing or analysis',
@@ -119,3 +123,50 @@ def vectorize_H(df):
     :return: void
     """
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
+
+
+def vectorize_realG(df, n=50):
+    """
+    Vectorize FEATURE_realG (column G) manually into a bag-of-words matrix.
+    df: pandas DataFrame containing FEATURE_realG column.
+    n: number of lines (of word in WORD_COUNT_FILE_G) to include below the 'coding' anchor word.
+    If 'coding' is the first word, this takes the top n words.
+
+    Reads WORD_COUNT_FILE_G for vocabulary selection.
+    Finds the row containing 'coding' and includes 'n' words starting from it.
+    Builds a bag-of-words binary matrix for FEATURE_realG.
+    Replaces the original column with new BoW columns.
+    """
+    word_counts = pd.read_csv(WORD_COUNT_FILE_G)
+    word_counts.columns = [c.lower() for c in word_counts.columns]
+    word_col = word_counts.columns[0]
+
+    coding_idx_list = word_counts[word_counts[word_col].str.lower() == "coding"].index
+    if len(coding_idx_list) == 0:
+        raise ValueError("'coding' not found in word-count file.")
+    coding_idx = coding_idx_list[0]
+
+    end_idx = min(coding_idx + n, len(word_counts))
+    vocab = word_counts[word_col].iloc[coding_idx:end_idx].str.lower().tolist()
+
+    print(f"Vocabulary size (hyperparameter): {len(vocab)} words starting from 'coding' (up to {n})")
+
+    if FEATURE_realG not in df.columns:
+        raise KeyError(f"Column '{FEATURE_realG}' not found in DataFrame.")
+    texts = df[FEATURE_realG].fillna("").astype(str).str.lower()
+
+    N = len(texts)
+    V = len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        words = text.split()
+        for w in words:
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"G_{w}" for w in vocab], index=df.index)
+    df.drop(columns=[FEATURE_realG], inplace=True)
+    df[bow_df.columns] = bow_df
+
