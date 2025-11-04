@@ -19,11 +19,11 @@ FILE_NAME = "training_data_clean.csv"
 THRESHOLD = 200  # hyperparameter for top words below 'code'
 REMOVE_WORDS = {"the", "a", "an", "and", "or"}  # stopwords for cleaning
 
-FEATURE_realB = "In your own words, what kinds of tasks would you use this model for?"##
-FEATURE_realG = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
-FEATURE_realJ = "When you verify a response from this model, how do you usually go about it?"
+FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"##
+FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
+FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
 
-TEXT_COL = [FEATURE_realB, FEATURE_realG, FEATURE_realJ]
+TEXT_COL = [FEATURE_A, FEATURE_F, FEATURE_I]
 
 TARGET_TASKS = [
         'math computations',
