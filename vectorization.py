@@ -14,9 +14,10 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-WORD_COUNT_FILE_G = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal_word_counts.csv"
-FEATURE_realG = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
-N_WORDS_AFTER_CODING = 100
+#Text
+FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
+FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
+FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
 
 TARGET_TASKS = [
         'math computations',
@@ -126,35 +127,22 @@ def vectorize_H(df):
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
 
 
-def vectorize_realG(df):
+def vectorize_F(df, vocab_df):
     """
-    Vectorize FEATURE_realG (column G) manually into a bag-of-words matrix.
-    df: pandas DataFrame containing FEATURE_realG column.
-    N_WORDS_AFTER_CODING: number of lines (of word in WORD_COUNT_FILE_G) to include below the 'coding' anchor word.
-    If 'coding' is the first word, this takes the top n words.
+    Vectorize FEATURE_realG (column G) using the vocabulary DataFrame
+    produced by clean_text_select_words (e.g., df_AFI1).
 
-    Reads WORD_COUNT_FILE_G for vocabulary selection.
-    Finds the row containing 'coding' and includes 'n' words starting from it.
-    Builds a bag-of-words binary matrix for FEATURE_realG.
-    Replaces the original column with new BoW columns.
+    This ensures that the Bag-of-Words columns use exactly the same
+    word set as the cleaned data pipeline.
     """
-    word_counts = pd.read_csv(WORD_COUNT_FILE_G)
-    word_counts.columns = [c.lower() for c in word_counts.columns]
-    word_col = word_counts.columns[0]
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+    print(f"[realG] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
 
-    coding_idx_list = word_counts[word_counts[word_col].str.lower() == "coding"].index
-    if len(coding_idx_list) == 0:
-        raise ValueError("'coding' not found in word-count file.")
-    coding_idx = coding_idx_list[0]
-
-    end_idx = min(coding_idx + N_WORDS_AFTER_CODING, len(word_counts))
-    vocab = word_counts[word_col].iloc[coding_idx:end_idx].str.lower().tolist()
-
-    print(f"Vocabulary size (hyperparameter): {len(vocab)} words starting from 'coding' (up to {N_WORDS_AFTER_CODING})")
-
-    if FEATURE_realG not in df.columns:
-        raise KeyError(f"Column '{FEATURE_realG}' not found in DataFrame.")
-    texts = df[FEATURE_realG].fillna("").astype(str).str.lower()
+    if FEATURE_F not in df.columns:
+        raise KeyError(f"Column '{FEATURE_F}' not found in DataFrame.")
+    texts = df[FEATURE_F].fillna("").astype(str).str.lower()
 
     N = len(texts)
     V = len(vocab)
@@ -162,12 +150,60 @@ def vectorize_realG(df):
     vocab_index = {word: j for j, word in enumerate(vocab)}
 
     for i, text in enumerate(texts):
-        words = text.split()
-        for w in words:
+        for w in text.split():
             if w in vocab_index:
                 X[i, vocab_index[w]] = 1
 
     bow_df = pd.DataFrame(X, columns=[f"G_{w}" for w in vocab], index=df.index)
-    df.drop(columns=[FEATURE_realG], inplace=True)
+    df.drop(columns=[FEATURE_F], inplace=True)
+    df[bow_df.columns] = bow_df
+
+def vectorize_A(df, vocab_df):
+    """Vectorize FEATURE_realB using its vocabulary DataFrame."""
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+    print(f"[realB] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
+
+    if FEATURE_A not in df.columns:
+        raise KeyError(f"Column '{FEATURE_A}' not found in DataFrame.")
+    texts = df[FEATURE_A].fillna("").astype(str).str.lower()
+
+    N, V = len(texts), len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        for w in text.split():
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"B_{w}" for w in vocab], index=df.index)
+    df.drop(columns=[FEATURE_A], inplace=True)
+    df[bow_df.columns] = bow_df
+
+
+def vectorize_I(df, vocab_df):
+    """Vectorize FEATURE_realJ using its vocabulary DataFrame."""
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+    print(f"[realJ] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
+
+    if FEATURE_I not in df.columns:
+        raise KeyError(f"Column '{FEATURE_I}' not found in DataFrame.")
+    texts = df[FEATURE_I].fillna("").astype(str).str.lower()
+
+    N, V = len(texts), len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        for w in text.split():
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"J_{w}" for w in vocab], index=df.index)
+    df.drop(columns=[FEATURE_I], inplace=True)
     df[bow_df.columns] = bow_df
 
