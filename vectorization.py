@@ -129,8 +129,8 @@ def vectorize_H(df):
 
 def vectorize_F(df, vocab_df):
     """
-    Vectorize FEATURE_realG (column G) using the vocabulary DataFrame
-    produced by clean_text_select_words (e.g., df_AFI1).
+    Vectorize FEATURE_F using the vocabulary DataFrame
+    produced by clean_text_select_words
 
     This ensures that the Bag-of-Words columns use exactly the same
     word set as the cleaned data pipeline.
@@ -138,7 +138,6 @@ def vectorize_F(df, vocab_df):
     if "word" not in vocab_df.columns:
         raise ValueError("Expected a column named 'word' in vocab_df.")
     vocab = vocab_df["word"].str.lower().tolist()
-    print(f"[realG] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
 
     if FEATURE_F not in df.columns:
         raise KeyError(f"Column '{FEATURE_F}' not found in DataFrame.")
@@ -159,11 +158,10 @@ def vectorize_F(df, vocab_df):
     df[bow_df.columns] = bow_df
 
 def vectorize_A(df, vocab_df):
-    """Vectorize FEATURE_realB using its vocabulary DataFrame."""
+    """Vectorize FEATURE_A using its vocabulary DataFrame."""
     if "word" not in vocab_df.columns:
         raise ValueError("Expected a column named 'word' in vocab_df.")
     vocab = vocab_df["word"].str.lower().tolist()
-    print(f"[realB] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
 
     if FEATURE_A not in df.columns:
         raise KeyError(f"Column '{FEATURE_A}' not found in DataFrame.")
@@ -184,11 +182,10 @@ def vectorize_A(df, vocab_df):
 
 
 def vectorize_I(df, vocab_df):
-    """Vectorize FEATURE_realJ using its vocabulary DataFrame."""
+    """Vectorize FEATURE_I using its vocabulary DataFrame."""
     if "word" not in vocab_df.columns:
         raise ValueError("Expected a column named 'word' in vocab_df.")
     vocab = vocab_df["word"].str.lower().tolist()
-    print(f"[realJ] Vocabulary size: {len(vocab)} words (from clean_text_select_words)")
 
     if FEATURE_I not in df.columns:
         raise KeyError(f"Column '{FEATURE_I}' not found in DataFrame.")
