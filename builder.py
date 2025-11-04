@@ -15,7 +15,6 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-FILE_NAME = "training_data_clean.csv"
 THRESHOLD = 200  # hyperparameter for top words below 'code'
 REMOVE_WORDS = {"the", "a", "an", "and", "or"}  # stopwords for cleaning
 
