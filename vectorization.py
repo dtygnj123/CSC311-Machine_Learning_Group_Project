@@ -154,7 +154,7 @@ def vectorize_F(df, vocab_df):
             if w in vocab_index:
                 X[i, vocab_index[w]] = 1
 
-    bow_df = pd.DataFrame(X, columns=[f"G_{w}" for w in vocab], index=df.index)
+    bow_df = pd.DataFrame(X, columns=[f"F_{w}" for w in vocab], index=df.index)
     df.drop(columns=[FEATURE_F], inplace=True)
     df[bow_df.columns] = bow_df
 
@@ -178,7 +178,7 @@ def vectorize_A(df, vocab_df):
             if w in vocab_index:
                 X[i, vocab_index[w]] = 1
 
-    bow_df = pd.DataFrame(X, columns=[f"B_{w}" for w in vocab], index=df.index)
+    bow_df = pd.DataFrame(X, columns=[f"A_{w}" for w in vocab], index=df.index)
     df.drop(columns=[FEATURE_A], inplace=True)
     df[bow_df.columns] = bow_df
 
@@ -203,7 +203,7 @@ def vectorize_I(df, vocab_df):
             if w in vocab_index:
                 X[i, vocab_index[w]] = 1
 
-    bow_df = pd.DataFrame(X, columns=[f"J_{w}" for w in vocab], index=df.index)
+    bow_df = pd.DataFrame(X, columns=[f"I_{w}" for w in vocab], index=df.index)
     df.drop(columns=[FEATURE_I], inplace=True)
     df[bow_df.columns] = bow_df
 
