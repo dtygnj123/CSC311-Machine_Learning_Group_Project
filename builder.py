@@ -23,6 +23,16 @@ TARGET_TASKS = [
         'converting content between formats (e.g., latex)',
         'brainstorming or generating creative ideas'
     ]
+TEXT_COL = [
+    "In your own words, what kinds of tasks would you use this model for?",
+    "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?",
+    "When you verify a response from this model, how do you usually go about it?"
+]
+REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "if",
+                "the", "they", "there", "that", "this", "would", "which", "where", "since", "so",
+                "i", "you", "i've", "i'd", "i'm", "me", "my", "it", "it's", "its", "is", "are", "was", "were", "has", "have",
+                "of", "for", "to", "in", "on", "at", "about", "into", "from",
+                "model", "think"}
 
 
 def main():
@@ -33,6 +43,8 @@ def main():
     df = pd.read_csv(FILE_NAME)
     data_cleaning_and_split.remove_incomplete_row(df)
     df = data_cleaning_and_split.lower_casing(df)
+    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(df, TEXT_COL, threshold=200)
     vectorization.vectorize_B(df)
     vectorization.vectorize_C(df)
     vectorization.vectorize_D(df)
