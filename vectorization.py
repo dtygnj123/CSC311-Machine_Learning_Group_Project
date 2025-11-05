@@ -1,7 +1,7 @@
 """
 This file contains functions to vectorize features.
 """
-
+import numpy as np
 import pandas as pd
 import re
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -13,6 +13,12 @@ FEATURE_D = "Based on your experience, how often has this model given you a resp
 FEATURE_E = "For which types of tasks do you feel this model tends to give suboptimal responses? (Select all that apply.)"
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
+
+#Text
+FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
+FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
+FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
+
 TARGET_TASKS = [
         'math computations',
         'data processing or analysis',
@@ -119,3 +125,81 @@ def vectorize_H(df):
     :return: void
     """
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
+
+
+def vectorize_F(df, vocab_df):
+    """
+    Vectorize FEATURE_F using the vocabulary DataFrame
+    produced by clean_text_select_words
+
+    This ensures that the Bag-of-Words columns use exactly the same
+    word set as the cleaned data pipeline.
+    """
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+
+    if FEATURE_F not in df.columns:
+        raise KeyError(f"Column '{FEATURE_F}' not found in DataFrame.")
+    texts = df[FEATURE_F].fillna("").astype(str).str.lower()
+
+    N = len(texts)
+    V = len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        for w in text.split():
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"I_{w}" for w in vocab], index=df.index)
+    df = pd.concat([df.drop(columns=[FEATURE_I]), bow_df], axis=1)
+    return df
+
+def vectorize_A(df, vocab_df):
+    """Vectorize FEATURE_A using its vocabulary DataFrame."""
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+
+    if FEATURE_A not in df.columns:
+        raise KeyError(f"Column '{FEATURE_A}' not found in DataFrame.")
+    texts = df[FEATURE_A].fillna("").astype(str).str.lower()
+
+    N, V = len(texts), len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        for w in text.split():
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"I_{w}" for w in vocab], index=df.index)
+    df = pd.concat([df.drop(columns=[FEATURE_I]), bow_df], axis=1)
+    return df
+
+
+def vectorize_I(df, vocab_df):
+    """Vectorize FEATURE_I using its vocabulary DataFrame."""
+    if "word" not in vocab_df.columns:
+        raise ValueError("Expected a column named 'word' in vocab_df.")
+    vocab = vocab_df["word"].str.lower().tolist()
+
+    if FEATURE_I not in df.columns:
+        raise KeyError(f"Column '{FEATURE_I}' not found in DataFrame.")
+    texts = df[FEATURE_I].fillna("").astype(str).str.lower()
+
+    N, V = len(texts), len(vocab)
+    X = np.zeros((N, V), dtype=int)
+    vocab_index = {word: j for j, word in enumerate(vocab)}
+
+    for i, text in enumerate(texts):
+        for w in text.split():
+            if w in vocab_index:
+                X[i, vocab_index[w]] = 1
+
+    bow_df = pd.DataFrame(X, columns=[f"I_{w}" for w in vocab], index=df.index)
+    df = pd.concat([df.drop(columns=[FEATURE_I]), bow_df], axis=1)
+    return df
