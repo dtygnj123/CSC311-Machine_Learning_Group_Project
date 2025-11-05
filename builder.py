@@ -15,9 +15,8 @@ FEATURE_G = "How often do you expect this model to provide responses with refere
 FEATURE_H = "How often do you verify this model's responses?"
 
 THRESHOLD = 200  # hyperparameter for top words below 'code'
-REMOVE_WORDS = {"the", "a", "an", "and", "or"}  # stopwords for cleaning
 
-FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"##
+FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
 FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
 
@@ -33,11 +32,6 @@ TARGET_TASKS = [
         'converting content between formats (e.g., latex)',
         'brainstorming or generating creative ideas'
     ]
-TEXT_COL = [
-    "In your own words, what kinds of tasks would you use this model for?",
-    "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?",
-    "When you verify a response from this model, how do you usually go about it?"
-]
 REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "if",
                 "the", "they", "there", "that", "this", "would", "which", "where", "since", "so",
                 "i", "you", "i've", "i'd", "i'm", "me", "my", "it", "it's", "its", "is", "are", "was", "were", "has", "have",
