@@ -5,7 +5,6 @@ This file is a builder script that performs data pre-processing in order.
 import pandas as pd
 import vectorization
 import data_cleaning_and_split
-import data_cleaning_n_split
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -44,8 +43,8 @@ def main():
     df = pd.read_csv(FILE_NAME)
     data_cleaning_and_split.remove_incomplete_row(df)
     df = data_cleaning_and_split.lower_casing(df)
-    df = data_cleaning_n_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
-    df, df_a, df_f, df_i = data_cleaning_n_split.clean_text_select_words(
+    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
         df, TEXT_COL, threshold=THRESHOLD
     )
     df.to_csv("csv_files/only_selected_words.csv", index=False)
@@ -59,7 +58,7 @@ def main():
     vectorization.vectorize_A(df, df_a)
     vectorization.vectorize_F(df, df_f)
     vectorization.vectorize_I(df, df_i)
-    df_train, df_val, df_test = data_cleaning_n_split.data_split(df, 0.5, 0.25, 0.25)
+    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
     print("Training data:\n", df_train)
     print("Validation data:\n", df_val)
     print("Test data:\n", df_test)
