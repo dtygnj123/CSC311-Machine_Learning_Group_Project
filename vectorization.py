@@ -55,11 +55,12 @@ def extract_rating(response):
 
 def vectorize_B(df):
     """
-    Replace df's FEATURE_B column's text entry with scalar in place
+    Replace df's FEATURE_B column's text entry with scalar in place and normalize by dividing 5
     :param df: pandas df representing training data
     :return: void
     """
     df[FEATURE_B] = df[FEATURE_B].apply(extract_rating)
+    df[FEATURE_B] = df[FEATURE_B] / 5
 
 
 def vectorize_C(df):
@@ -84,11 +85,12 @@ def vectorize_C(df):
 
 def vectorize_D(df):
     """
-    Replace df's FEATURE_D column's text entry with scalar in place
+    Replace df's FEATURE_D column's text entry with scalar in place and normalize it by dividing 5
     :param df: pandas df representing training data
     :return: void
     """
     df[FEATURE_D] = df[FEATURE_D].apply(extract_rating)
+    df[FEATURE_D] = df[FEATURE_D] / 5
 
 
 def vectorize_E(df):
@@ -111,20 +113,22 @@ def vectorize_E(df):
 
 def vectorize_G(df):
     """
-    Replace df's FEATURE_G column's text entry with scalar in place
+    Replace df's FEATURE_G column's text entry with scalar in place and normalize it by dividing 5
     :param df: pandas df representing training data
     :return: void
     """
     df[FEATURE_G] = df[FEATURE_G].apply(extract_rating)
+    df[FEATURE_G] = df[FEATURE_G] / 5
 
 
 def vectorize_H(df):
     """
-    Replace df's FEATURE_H column's text entry with scalar in place
+    Replace df's FEATURE_H column's text entry with scalar in place and normalize it by dividing 5
     :param df: pandas df representing training data
     :return: void
     """
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
+    df[FEATURE_H] = df[FEATURE_H] / 5
 
 
 def vectorize_F(df, vocab_df):
