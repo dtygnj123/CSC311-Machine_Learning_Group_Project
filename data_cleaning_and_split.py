@@ -176,7 +176,7 @@ def clean_text_select_words(dataframe, columns, threshold):
 
         freq_df = pd.DataFrame(counts.items(), columns=["word", "count"]).sort_values(by="count", ascending=False)
 
-        freq_df.to_csv(f"csv_files/{col}_word_counts.csv", index=False)
+        # freq_df.to_csv(f"csv_files/{col}_word_counts.csv", index=False)
 
         code_count = counts.get("code", 0)
         less_than_code = freq_df[freq_df["count"] <= code_count] # less frequent than "code", including "code"
@@ -189,9 +189,9 @@ def clean_text_select_words(dataframe, columns, threshold):
             dataframe[col] = dataframe[col].apply(lambda x: clean_text_select_word_helper(x, word_set))
 
         # Save to CSV
-        top_less_than_code.to_csv(f"csv_files/{col}_rare_words.csv", index=False)
+        # top_less_than_code.to_csv(f"csv_files/{col}_rare_words.csv", index=False)
         df_AFI.append(top_less_than_code)
-        print(f"Saved {col}_rare_words.csv with {len(word_set)} words (less frequent than 'code')")
+        # print(f"Saved {col}_rare_words.csv with {len(word_set)} words (less frequent than 'code')")
 
     return dataframe, df_AFI[0], df_AFI[1], df_AFI[2]
 
