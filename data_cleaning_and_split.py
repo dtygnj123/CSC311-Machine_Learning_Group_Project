@@ -48,3 +48,23 @@ def data_split(df, train_size, val_size, test_size, seed=42):
     df_val, df_test = train_test_split(df_temp, test_size=(test_size / (val_size + test_size)), random_state=seed)
 
     return df_train, df_val, df_test
+
+
+def split_label(df):
+    """
+    ...
+    :param df:
+    :return:
+    """
+    df_label = df['label']
+    del df['label']
+    return df, df_label
+
+
+def remove_student_id(df):
+    """
+    remove student id colume in given df
+    :param df:
+    :return: vodi
+    """
+    del df['student_id']
