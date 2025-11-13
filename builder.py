@@ -51,7 +51,7 @@ def main():
     df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
         df, TEXT_COL, threshold=THRESHOLD
     )
-    df.to_csv("csv_files/only_selected_words.csv", index=False)
+    # df.to_csv("csv_files/only_selected_words.csv", index=False)
     vectorization.vectorize_B(df)
     vectorization.vectorize_C(df)
     vectorization.vectorize_D(df)
@@ -59,9 +59,9 @@ def main():
     vectorization.vectorize_G(df)
     vectorization.vectorize_H(df)
 
-    vectorization.vectorize_A(df, df_a)
-    vectorization.vectorize_F(df, df_f)
-    vectorization.vectorize_I(df, df_i)
+    df = vectorization.vectorize_A(df, df_a)
+    df = vectorization.vectorize_F(df, df_f)
+    df = vectorization.vectorize_I(df, df_i)
     df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
     print("Training data:\n", df_train)
     print("Validation data:\n", df_val)
