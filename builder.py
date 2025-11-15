@@ -5,8 +5,7 @@ This file is a builder script that performs data pre-processing in order.
 import pandas as pd
 import vectorization
 import data_cleaning_and_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import MultiLabelBinarizer
+import knn
 import matplotlib.pyplot as plt
 
 FILE_NAME = "training_data_clean.csv"
@@ -17,7 +16,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 200  # hyperparameter for top words below 'code'
+THRESHOLD = 30  # hyperparameter for top words below 'code'
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
@@ -28,7 +27,7 @@ TEXT_COL = [FEATURE_A, FEATURE_F, FEATURE_I]
 TARGET_TASKS = [
         'math computations',
         'data processing or analysis',
-        'explaining complex concepts simply', 
+        'explaining complex concepts simply',
         'writing or editing essays/reports',
         'drafting professional text (e.g., emails, résumés)',
         'writing or debugging code',
@@ -70,26 +69,20 @@ def main():
     x_train, y_train = data_cleaning_and_split.split_label(df_train)
     x_val, y_val = data_cleaning_and_split.split_label(df_val)
     x_test, y_test = data_cleaning_and_split.split_label(df_test)
-    valid_acc = []
-    # Test k from 1 to 11
-    for k in range(1, 11):
-        knn = KNeighborsClassifier(n_neighbors=k)
-        knn.fit(x_train, y_train)
-        train_acc = knn.score(x_train, y_train)
-        test_acc = knn.score(x_test, y_test)
-        valid_acc.append(test_acc)
-        print(f"Training accuracy: {train_acc:.3f}")
-        print(f"Test accuracy: {test_acc:.3f}")
 
-    # Plot k w.r.t validation accuracy
+    # kNN
+    val_acc = []
+    for k in range(1, 50):
+        y_val_pred = knn.knn_predict(x_train, y_train, x_val, k=k, metric="euclidean")
+        acc = knn.accuracy(y_val, y_val_pred)
+        val_acc.append(acc)
+        print("Accuracy:", acc)
+
     plt.title("Validatation Accuracy for an Normalized kNN model")
-    plt.plot(range(1, 11), valid_acc)
+    plt.plot(range(1, 50), val_acc)
     plt.xlabel("k")
     plt.ylabel("Accuracy")
     plt.show()
-
-    # Set K = 2
-    k = 2
 
     return df_train, df_val, df_test
 
