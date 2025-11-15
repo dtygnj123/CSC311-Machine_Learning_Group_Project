@@ -7,6 +7,7 @@ import vectorization
 import data_cleaning_and_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
+import matplotlib.pyplot as plt
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -69,12 +70,26 @@ def main():
     x_train, y_train = data_cleaning_and_split.split_label(df_train)
     x_val, y_val = data_cleaning_and_split.split_label(df_val)
     x_test, y_test = data_cleaning_and_split.split_label(df_test)
-    knn = KNeighborsClassifier(n_neighbors=20)
-    knn.fit(x_train, y_train)
-    train_acc = knn.score(x_train, y_train)
-    test_acc = knn.score(x_test, y_test)
-    print(f"Training accuracy: {train_acc:.3f}")
-    print(f"Test accuracy: {test_acc:.3f}")
+    valid_acc = []
+    # Test k from 1 to 11
+    for k in range(1, 11):
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(x_train, y_train)
+        train_acc = knn.score(x_train, y_train)
+        test_acc = knn.score(x_test, y_test)
+        valid_acc.append(test_acc)
+        print(f"Training accuracy: {train_acc:.3f}")
+        print(f"Test accuracy: {test_acc:.3f}")
+
+    # Plot k w.r.t validation accuracy
+    plt.title("Validatation Accuracy for an Normalized kNN model")
+    plt.plot(range(1, 11), valid_acc)
+    plt.xlabel("k")
+    plt.ylabel("Accuracy")
+    plt.show()
+
+    # Set K = 2
+    k = 2
 
     return df_train, df_val, df_test
 
