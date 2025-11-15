@@ -82,22 +82,22 @@ def main():
         transformers=[
             ("tfidf_A", TfidfVectorizer(
                 lowercase=True,
-                min_df=2,
-                max_features=3000, # changing them to 5000 does not improve
+                min_df=5,
+                max_features=100, # changing them to 5000 does not improve
                 ngram_range=(1, 2)
             ), FEATURE_A),
 
             ("tfidf_F", TfidfVectorizer(
                 lowercase=True,
-                min_df=2,
+                min_df=5,
                 max_features=3000,
                 ngram_range=(1, 2)
             ), FEATURE_F),
 
             ("tfidf_I", TfidfVectorizer(
                 lowercase=True,
-                min_df=2,
-                max_features=3000,
+                min_df=5,
+                max_features=1500,
                 ngram_range=(1, 2)
             ), FEATURE_I),
 
@@ -127,7 +127,7 @@ def main():
         solver='liblinear',   # or 'saga' if you have many samples
         max_iter=500, # did 50 ~ 500, exactly the same
         fit_intercept=True,
-        C=0.62,                # slightly stronger regularization, 0.5 is the best so far
+        C=0.5,                # slightly stronger regularization, 0.5 is the best so far
         class_weight = "balanced"
     )
 
@@ -135,6 +135,7 @@ def main():
 
     print(f"Training accuracy: {lr.score(df_train, t_train)}")
     print(f"Validation accuracy: {lr.score(df_val, t_val)}")
+    print("Test Accuracy:", lr.score(df_test, t_test))
     print(classification_report(t_val, lr.predict(df_val)))
 
 if __name__ == "__main__":
