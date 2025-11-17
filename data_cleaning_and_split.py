@@ -95,6 +95,8 @@ def normalize_and_clean_text(s: str, remove_words) -> str:
     # Collapse multiple spaces into single space, strip ends
     s = re.sub(r"\s+", " ", s).strip()
 
+
+
     # remove adverbs
     s = remove_adverbs(s)
 
@@ -163,7 +165,7 @@ def remove_plural_s(text):
     return " ".join(cleaned)
 
 
-def clean_text_select_words(dataframe, columns, threshold):
+def clean_text_select_words(dataframe, dataframe_train, columns, threshold):
     """
     Keep only the 'threshold' most frequent words and has less frequency than the word 'code'.
     Select the words with a hyperparameter. Not including the words in remove_words.
@@ -172,7 +174,7 @@ def clean_text_select_words(dataframe, columns, threshold):
     df_AFI = []
 
     for col in columns:
-        counts = get_word_counts(dataframe[col])
+        counts = get_word_counts(dataframe_train[col])
 
         freq_df = pd.DataFrame(counts.items(), columns=["word", "count"]).sort_values(by="count", ascending=False)
 

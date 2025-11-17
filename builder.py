@@ -23,6 +23,7 @@ FEATURE_F = "Think of one task where this model gave you a suboptimal response. 
 FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
 
 TEXT_COL = [FEATURE_A, FEATURE_F, FEATURE_I]
+NUMERIC_COL = [FEATURE_B, FEATURE_D, FEATURE_G, FEATURE_H]
 
 TARGET_TASKS = [
         'math computations',
@@ -51,8 +52,11 @@ def main():
     df = data_cleaning_and_split.lower_casing(df)
     data_cleaning_and_split.remove_student_id(df)
     df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+
+    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # solve the information leak
+
     df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
-        df, TEXT_COL, threshold=THRESHOLD
+        df, df_train, TEXT_COL, threshold=THRESHOLD
     )
     # df.to_csv("csv_files/only_selected_words.csv", index=False)
     vectorization.vectorize_B(df)
