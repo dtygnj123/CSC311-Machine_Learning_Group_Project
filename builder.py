@@ -5,6 +5,8 @@ This file is a builder script that performs data pre-processing in order.
 import pandas as pd
 import vectorization
 import data_cleaning_and_split
+import knn
+import matplotlib.pyplot as plt
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -26,7 +28,7 @@ NUMERIC_COL = [FEATURE_B, FEATURE_D, FEATURE_G, FEATURE_H]
 TARGET_TASKS = [
         'math computations',
         'data processing or analysis',
-        'explaining complex concepts simply', 
+        'explaining complex concepts simply',
         'writing or editing essays/reports',
         'drafting professional text (e.g., emails, résumés)',
         'writing or debugging code',
@@ -48,7 +50,8 @@ def main():
     df = pd.read_csv(FILE_NAME)
     data_cleaning_and_split.remove_incomplete_row(df)
     df = data_cleaning_and_split.lower_casing(df)
-    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS, logistic=True)
+    data_cleaning_and_split.remove_student_id(df)
+    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
     df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # solve the information leak
 
@@ -67,13 +70,26 @@ def main():
     df = vectorization.vectorize_F(df, df_f)
     df = vectorization.vectorize_I(df, df_i)
     df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
-    print("Training data:\n", df_train)
-    print("Validation data:\n", df_val)
-    print("Test data:\n", df_test)
+    x_train, y_train = data_cleaning_and_split.split_label(df_train)
+    x_val, y_val = data_cleaning_and_split.split_label(df_val)
+    x_test, y_test = data_cleaning_and_split.split_label(df_test)
+
+    # kNN
+    val_acc = []
+    for k in range(1, 50):
+        y_val_pred = knn.knn_predict(x_train, y_train, x_val, k=k, metric="euclidean")
+        acc = knn.accuracy(y_val, y_val_pred)
+        val_acc.append(acc)
+        print("Accuracy:", acc)
+
+    plt.title("Validatation Accuracy for an Normalized kNN model")
+    plt.plot(range(1, 50), val_acc)
+    plt.xlabel("k")
+    plt.ylabel("Accuracy")
+    plt.show()
 
     return df_train, df_val, df_test
 
 
 if __name__ == "__main__":
     main()
-##

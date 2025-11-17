@@ -231,3 +231,21 @@ def clean_selected_words(text, selected_words):
     text = re.sub(r'\s+', ' ', text).strip() # remove extra spaces
     return text
 
+def split_label(df):
+    """
+    ...
+    :param df:
+    :return:
+    """
+    df_label = df['label']
+    del df['label']
+    return df, df_label
+
+
+def remove_student_id(df):
+    """
+    remove student id colume in given df
+    :param df:
+    :return: vodi
+    """
+    del df['student_id']
