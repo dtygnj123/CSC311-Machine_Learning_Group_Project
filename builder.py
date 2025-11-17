@@ -16,7 +16,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 30  # hyperparameter for top words below 'code'
+THRESHOLD = 7  # hyperparameter for top words below 'code'
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
