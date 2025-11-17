@@ -48,7 +48,7 @@ def main():
     df = pd.read_csv(FILE_NAME)
     data_cleaning_and_split.remove_incomplete_row(df)
     df = data_cleaning_and_split.lower_casing(df)
-    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS, logistic=True)
 
     df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # solve the information leak
 

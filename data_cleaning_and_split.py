@@ -95,13 +95,15 @@ def normalize_and_clean_text(s: str, remove_words) -> str:
     # Collapse multiple spaces into single space, strip ends
     s = re.sub(r"\s+", " ", s).strip()
 
-    # remove adverbs
-    #  = remove_adverbs(s)
 
-    # s = remove_selected_words(s, remove_words)
+
+    # remove adverbs
+    s = remove_adverbs(s)
+
+    s = remove_selected_words(s, remove_words)
 
     # remove the plurals
-    # s = remove_plural_s(s)
+    s = remove_plural_s(s)
 
     return s
 
