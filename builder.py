@@ -1,12 +1,11 @@
 """
-This file is a builder script that performs data pre-processing in order.
+This file is a builder script.
 """
 
 import pandas as pd
 import vectorization
+import random_forest
 import data_cleaning_and_split
-import knn
-import matplotlib.pyplot as plt
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -16,7 +15,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 30  # hyperparameter for top words below 'code'
+THRESHOLD = 3
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
@@ -35,6 +34,7 @@ TARGET_TASKS = [
         'converting content between formats (e.g., latex)',
         'brainstorming or generating creative ideas'
     ]
+
 REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "if",
                 "the", "they", "there", "that", "this", "would", "which", "where", "since", "so",
                 "i", "you", "i've", "i'd", "i'm", "me", "my", "it", "it's", "its", "is", "are", "was", "were", "has", "have",
@@ -58,7 +58,7 @@ def main():
     df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
         df, df_train, TEXT_COL, threshold=THRESHOLD
     )
-    # df.to_csv("csv_files/only_selected_words.csv", index=False)
+
     vectorization.vectorize_B(df)
     vectorization.vectorize_C(df)
     vectorization.vectorize_D(df)
@@ -73,23 +73,14 @@ def main():
     x_train, y_train = data_cleaning_and_split.split_label(df_train)
     x_val, y_val = data_cleaning_and_split.split_label(df_val)
     x_test, y_test = data_cleaning_and_split.split_label(df_test)
-
-    # kNN
-    val_acc = []
-    for k in range(1, 50):
-        y_val_pred = knn.knn_predict(x_train, y_train, x_val, k=k, metric="euclidean")
-        acc = knn.accuracy(y_val, y_val_pred)
-        val_acc.append(acc)
-        print("Accuracy:", acc)
-
-    plt.title("Validatation Accuracy for an Normalized kNN model")
-    plt.plot(range(1, 50), val_acc)
-    plt.xlabel("k")
-    plt.ylabel("Accuracy")
-    plt.show()
-
-    return df_train, df_val, df_test
-
+    
+    best_model = random_forest.rf(x_train, y_train, x_val, y_val)
+    random_forest.evaluate_split(best_model, x_train, y_train, split_name="Train")
+    random_forest.evaluate_split(best_model, x_val, y_val, split_name="Validation")
+    random_forest.evaluate_split(best_model, x_test, y_test, split_name="Test")
 
 if __name__ == "__main__":
     main()
+    
+    
+
