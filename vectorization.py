@@ -61,6 +61,8 @@ def vectorize_B(df):
     """
     df[FEATURE_B] = df[FEATURE_B].apply(extract_rating)
     df[FEATURE_B] = df[FEATURE_B] / 5
+    mean_val = df[FEATURE_B].mean()
+    df.fillna({FEATURE_B: mean_val}, inplace=True)
 
 
 def vectorize_C(df):
@@ -91,6 +93,8 @@ def vectorize_D(df):
     """
     df[FEATURE_D] = df[FEATURE_D].apply(extract_rating)
     df[FEATURE_D] = df[FEATURE_D] / 5
+    mean_val = df[FEATURE_D].mean()
+    df.fillna({FEATURE_D: mean_val}, inplace=True)
 
 
 def vectorize_E(df):
@@ -119,6 +123,8 @@ def vectorize_G(df):
     """
     df[FEATURE_G] = df[FEATURE_G].apply(extract_rating)
     df[FEATURE_G] = df[FEATURE_G] / 5
+    mean_val = df[FEATURE_G].mean()
+    df.fillna({FEATURE_G: mean_val}, inplace=True)
 
 
 def vectorize_H(df):
@@ -129,6 +135,8 @@ def vectorize_H(df):
     """
     df[FEATURE_H] = df[FEATURE_H].apply(extract_rating)
     df[FEATURE_H] = df[FEATURE_H] / 5
+    mean_val = df[FEATURE_H].mean()
+    df.fillna({FEATURE_H: mean_val}, inplace=True)
 
 
 def vectorize_F(df, vocab_df):
