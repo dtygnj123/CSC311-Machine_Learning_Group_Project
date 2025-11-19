@@ -168,34 +168,37 @@ def remove_plural_s(text):
 
 def clean_text_select_words(dataframe, dataframe_train, columns, threshold):
     """
-    Keep only the 'threshold' most frequent words and has less frequency than the word 'code'.
-    Select the words with a hyperparameter. Not including the words in remove_words.
+    For each column:
+    - compute per-class word frequencies
+    - compute variance across classes
+    - keep top 'threshold' words with highest variance
+    - filter dataframe texts to keep only those words
     """
 
     df_AFI = []
 
+    labels = dataframe_train["label"]  # must contain "Gemini", "ChatGPT", "Claude"
+
     for col in columns:
-        counts = get_word_counts(dataframe_train[col])
 
-        freq_df = pd.DataFrame(counts.items(), columns=["word", "count"]).sort_values(by="count", ascending=False)
+        # NEW: get per-class counts + variance
+        freq_df = get_word_counts_per_class(dataframe_train[col], labels)
 
-        # freq_df.to_csv(f"csv_files/{col}_word_counts.csv", index=False)
+        # Keep the top 'threshold' words with highest variance
+        top_words = freq_df.head(threshold)
 
-        code_count = counts.get("code", 0)
-        less_than_code = freq_df[freq_df["count"] <= code_count] # less frequent than "code", including "code"
-        top_less_than_code = less_than_code.head(threshold) # Take the top 'threshold' words
+        # Convert to a set
+        word_set = set(top_words["word"])
 
-        # Convert to a set of words
-        word_set = set(top_less_than_code["word"])
-
+        # Filter the actual data column
         if col in dataframe.columns:
-            dataframe[col] = dataframe[col].apply(lambda x: clean_text_select_word_helper(x, word_set))
+            dataframe[col] = dataframe[col].apply(
+                lambda x: clean_text_select_word_helper(x, word_set)
+            )
 
-        # Save to CSV
-        # top_less_than_code.to_csv(f"csv_files/{col}_rare_words.csv", index=False)
-        df_AFI.append(top_less_than_code)
-        # print(f"Saved {col}_rare_words.csv with {len(word_set)} words (less frequent than 'code')")
+        df_AFI.append(top_words)
 
+    # return 3 tables instead of 1 (you had df_AFI[0], df_AFI[1], df_AFI[2])
     return dataframe, df_AFI[0], df_AFI[1], df_AFI[2]
 
 
@@ -211,14 +214,62 @@ def clean_text_select_word_helper(s: str, word_set: set) -> str:
     return s
 
 
-def get_word_counts(text_series):
-    """ Get a word to frequency count table."""
-    # Combine all text into one big string
-    text = ' '.join(text_series.dropna().astype(str))
-    # Split into words
-    words = text.split()
-    # Count frequency
-    return Counter(words) 
+def get_word_counts_per_class(text_series, labels):
+    """
+    text_series : pandas series of text (strings)
+    labels      : pandas series of class labels ("Gemini", "ChatGPT", "Claude")
+
+    Returns: DataFrame with columns:
+        word | count_gemini | count_chatgpt | count_claude | variance
+    """
+
+    # Initialize counters
+    counter_gemini = Counter()
+    counter_chatgpt = Counter()
+    counter_claude = Counter()
+
+    # Iterate through samples
+    for text, label in zip(text_series, labels):
+        if not isinstance(text, str):
+            continue
+        words = text.split()
+
+        if label == "gemini":
+            counter_gemini.update(words)
+        elif label == "chatgpt":
+            counter_chatgpt.update(words)
+        elif label == "claude":
+            counter_claude.update(words)
+
+    # Create a unified vocabulary
+    all_words = (
+        set(counter_gemini.keys()) |
+        set(counter_chatgpt.keys()) |
+        set(counter_claude.keys())
+    )
+
+    rows = []
+    for word in all_words:
+        g = counter_gemini.get(word, 0)
+        c = counter_chatgpt.get(word, 0)
+        a = counter_claude.get(word, 0)
+
+        var = np.var([g, c, a])   # compute variance
+
+        rows.append({
+            "word": word,
+            "count_gemini": g,
+            "count_chatgpt": c,
+            "count_claude": a,
+            "variance": var
+        })
+
+    df = pd.DataFrame(rows)
+
+    # Sort by variance descending
+    df = df.sort_values(by="variance", ascending=False).reset_index(drop=True)
+
+    return df
 
 
 def clean_selected_words(text, selected_words):
