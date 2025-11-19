@@ -14,7 +14,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 3
+THRESHOLD = 6
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
@@ -178,13 +178,15 @@ def main():
     x_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
     x_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
 
-    train_result = knn_predict(x_train, y_train, x_train, k=38)
-    val_result = knn_predict(x_train, y_train, x_val, k=38)
-    test_result = knn_predict(x_train, y_train, x_test, k=38)
+    for k in range(1, 50):
+        train_result = knn_predict(x_train, y_train, x_train, k=k)
+        val_result = knn_predict(x_train, y_train, x_val, k=k)
+        test_result = knn_predict(x_train, y_train, x_test, k=k)
 
-    print("Train Acc", accuracy(y_train, train_result))
-    print("Val Acc", accuracy(y_val, val_result))
-    print("Test Acc", accuracy(y_test, test_result))
+        print(k)
+        print("Train Acc", accuracy(y_train, train_result))
+        print("Val Acc", accuracy(y_val, val_result))
+        print("Test Acc", accuracy(y_test, test_result))
 
 
 if __name__ == "__main__":
