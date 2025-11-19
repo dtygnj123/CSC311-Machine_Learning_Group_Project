@@ -1,10 +1,10 @@
 """
 This file contains functions to vectorize features.
 """
+
 import numpy as np
 import pandas as pd
 import re
-from sklearn.preprocessing import MultiLabelBinarizer
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -13,8 +13,6 @@ FEATURE_D = "Based on your experience, how often has this model given you a resp
 FEATURE_E = "For which types of tasks do you feel this model tends to give suboptimal responses? (Select all that apply.)"
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
-
-#Text
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
 FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
@@ -70,18 +68,17 @@ def vectorize_C(df):
     :param df: pandas df representing training data
     :return: void
     """
+    # Convert each response into a list of selected target tasks
     best_tasks_lists = process_multiselect(df[FEATURE_C], TARGET_TASKS)
-    mlb_best = MultiLabelBinarizer(classes=TARGET_TASKS)
-    best_tasks_encoded = mlb_best.fit_transform(best_tasks_lists)
-    
-    # Create a DataFrame with meaningful column names and aligned index
-    new_cols = [f"best_{c}" for c in mlb_best.classes_]
-    onehot = pd.DataFrame(best_tasks_encoded, columns=new_cols, index=df.index)
-    
-    # Replace the original column with the new one-hot columns
-    df.drop(columns=[FEATURE_C], inplace=True)
-    df[new_cols] = onehot.astype(int)
 
+    # Manually one-hot encode
+    for task in TARGET_TASKS:
+        new_col = f"best_{task}"
+        df[new_col] = [1 if task in tasks else 0 for tasks in best_tasks_lists]
+
+    # Drop original text column
+    df.drop(columns=[FEATURE_C], inplace=True)
+    
 
 def vectorize_D(df):
     """
@@ -100,15 +97,16 @@ def vectorize_E(df):
     :param df: pandas df representing training data
     :return: void
     """
+    # Convert each response into a list of selected target tasks
     suboptimal_tasks_lists = process_multiselect(df[FEATURE_E], TARGET_TASKS)
-    mlb_subopt = MultiLabelBinarizer(classes=TARGET_TASKS)
-    suboptimal_tasks_encoded = mlb_subopt.fit_transform(suboptimal_tasks_lists)
-    
-    new_cols = [f"subopt_{c}" for c in mlb_subopt.classes_]
-    onehot = pd.DataFrame(suboptimal_tasks_encoded, columns=new_cols, index=df.index)
-    
+
+    # Manually one-hot encode
+    for task in TARGET_TASKS:
+        new_col = f"subopt_{task}"
+        df[new_col] = [1 if task in tasks else 0 for tasks in suboptimal_tasks_lists]
+
+    # Drop original text column
     df.drop(columns=[FEATURE_E], inplace=True)
-    df[new_cols] = onehot.astype(int)
     
 
 def vectorize_G(df):

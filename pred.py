@@ -1,11 +1,9 @@
-"""
-This file is a builder script.
-"""
-
+import numpy as np
 import pandas as pd
-import vectorization
-import random_forest
-import data_cleaning_and_split
+import data_cleaning_and_split_refactored
+import vectorization_refactored 
+import random_forest_refactored
+
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -22,7 +20,6 @@ FEATURE_F = "Think of one task where this model gave you a suboptimal response. 
 FEATURE_I = "When you verify a response from this model, how do you usually go about it?"
 
 TEXT_COL = [FEATURE_A, FEATURE_F, FEATURE_I]
-NUMERIC_COL = [FEATURE_B, FEATURE_D, FEATURE_G, FEATURE_H]
 
 TARGET_TASKS = [
         'math computations',
@@ -42,45 +39,13 @@ REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "i
                 "model", "think"}
 
 
-def main():
-    """
-    main function
-    :return: void
-    """
-    df = pd.read_csv(FILE_NAME)
-    data_cleaning_and_split.remove_incomplete_row(df)
-    df = data_cleaning_and_split.lower_casing(df)
-    data_cleaning_and_split.remove_student_id(df)
-    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+def preprocess_for_rf(df, feature_names):
+    pass
 
-    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # solve the information leak
 
-    df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
-        df, df_train, TEXT_COL, threshold=THRESHOLD
-    )
+def predict_all(file_name):
+    pass
 
-    vectorization.vectorize_B(df)
-    vectorization.vectorize_C(df)
-    vectorization.vectorize_D(df)
-    vectorization.vectorize_E(df)
-    vectorization.vectorize_G(df)
-    vectorization.vectorize_H(df)
-
-    df = vectorization.vectorize_A(df, df_a)
-    df = vectorization.vectorize_F(df, df_f)
-    df = vectorization.vectorize_I(df, df_i)
-    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
-    x_train, y_train = data_cleaning_and_split.split_label(df_train)
-    x_val, y_val = data_cleaning_and_split.split_label(df_val)
-    x_test, y_test = data_cleaning_and_split.split_label(df_test)
-    
-    best_model = random_forest.rf(x_train, y_train, x_val, y_val)
-    random_forest.evaluate_split(best_model, x_train, y_train, split_name="Train")
-    random_forest.evaluate_split(best_model, x_val, y_val, split_name="Validation")
-    random_forest.evaluate_split(best_model, x_test, y_test, split_name="Test")
 
 if __name__ == "__main__":
-    main()
-    
-    
-
+    pass
