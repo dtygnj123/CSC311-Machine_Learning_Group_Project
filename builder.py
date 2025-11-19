@@ -15,7 +15,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 3
+# THRESHOLD = 10
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
@@ -47,37 +47,48 @@ def main():
     main function
     :return: void
     """
-    df = pd.read_csv(FILE_NAME)
-    data_cleaning_and_split.remove_incomplete_row(df)
-    df = data_cleaning_and_split.lower_casing(df)
-    data_cleaning_and_split.remove_student_id(df)
-    df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    list = []
+    for THRESHOLD in range(0, 100, 2):
+        print(f"==========================Threshold is: {THRESHOLD}============================")
+        df = pd.read_csv(FILE_NAME)
+        data_cleaning_and_split.remove_incomplete_row(df)
+        df = data_cleaning_and_split.lower_casing(df)
+        data_cleaning_and_split.remove_student_id(df)
+        df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
-    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # solve the information leak
+        df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.7, 0.15, 0.15) # solve the information leak
 
-    df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
-        df, df_train, TEXT_COL, threshold=THRESHOLD
-    )
+        df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
+            df, df_train, TEXT_COL, threshold=THRESHOLD
+        )
 
-    vectorization.vectorize_B(df)
-    vectorization.vectorize_C(df)
-    vectorization.vectorize_D(df)
-    vectorization.vectorize_E(df)
-    vectorization.vectorize_G(df)
-    vectorization.vectorize_H(df)
+        vectorization.vectorize_B(df)
+        vectorization.vectorize_C(df)
+        vectorization.vectorize_D(df)
+        vectorization.vectorize_E(df)
+        vectorization.vectorize_G(df)
+        vectorization.vectorize_H(df)
 
-    df = vectorization.vectorize_A(df, df_a)
-    df = vectorization.vectorize_F(df, df_f)
-    df = vectorization.vectorize_I(df, df_i)
-    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
-    x_train, y_train = data_cleaning_and_split.split_label(df_train)
-    x_val, y_val = data_cleaning_and_split.split_label(df_val)
-    x_test, y_test = data_cleaning_and_split.split_label(df_test)
-    
-    best_model = random_forest.rf(x_train, y_train, x_val, y_val)
-    random_forest.evaluate_split(best_model, x_train, y_train, split_name="Train")
-    random_forest.evaluate_split(best_model, x_val, y_val, split_name="Validation")
-    random_forest.evaluate_split(best_model, x_test, y_test, split_name="Test")
+        df = vectorization.vectorize_A(df, df_a)
+        df = vectorization.vectorize_F(df, df_f)
+        df = vectorization.vectorize_I(df, df_i)
+        df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
+        x_train, y_train = data_cleaning_and_split.split_label(df_train)
+        x_val, y_val = data_cleaning_and_split.split_label(df_val)
+        x_test, y_test = data_cleaning_and_split.split_label(df_test)
+
+        best_model = random_forest.rf(x_train, y_train, x_val, y_val)
+        random_forest.evaluate_split(best_model, x_train, y_train, split_name="Train")
+        val_acc = random_forest.evaluate_split(best_model, x_val, y_val, split_name="Validation")
+        test_acc = random_forest.evaluate_split(best_model, x_test, y_test, split_name="Test")
+
+        avg_per = (val_acc + test_acc)/2
+
+        list.append((THRESHOLD, avg_per))
+    print("FINISH:")
+
+    best = max(list, key=lambda x: x[1])
+    print(best)
 
 if __name__ == "__main__":
     main()

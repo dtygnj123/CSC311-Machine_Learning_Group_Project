@@ -33,31 +33,35 @@ def evaluate_split(model, x, y, split_name="Validation"):
     
     acc = accuracy_score(y, y_pred)
     # For multi-class, 'macro' treats all classes equally
-    prec = precision_score(y, y_pred, average="macro", zero_division=0)
-    rec = recall_score(y, y_pred, average="macro", zero_division=0)
-    f1 = f1_score(y, y_pred, average="macro", zero_division=0)
-    cm = confusion_matrix(y, y_pred)
+    # prec = precision_score(y, y_pred, average="macro", zero_division=0)
+    # rec = recall_score(y, y_pred, average="macro", zero_division=0)
+    # f1 = f1_score(y, y_pred, average="macro", zero_division=0)
+    # cm = confusion_matrix(y, y_pred)
 
     print(f"\n===== {split_name} metrics =====")
     print(f"Accuracy:  {acc:.3f}")
-    print(f"Precision: {prec:.3f}")
-    print(f"Recall:    {rec:.3f}")
-    print(f"F1-score:  {f1:.3f}")
-    print("\nConfusion matrix:")
-    print(cm)
-    print("\nClassification report:")
-    print(classification_report(y, y_pred))
+    return acc
+    # print(f"Precision: {prec:.3f}")
+    # print(f"Recall:    {rec:.3f}")
+    # print(f"F1-score:  {f1:.3f}")
+    # print("\nConfusion matrix:")
+    # print(cm)
+    # print("\nClassification report:")
+    # print(classification_report(y, y_pred))
 
 def rf(x_train, y_train, x_val, y_val):
     best_model = None
     best_acc = 0.0
     best_params = None
 
-    n_estimators_list = [50, 100, 200, 500]     # number of trees
-    max_depth_list = [3, 5, 7, 9]   # shallower than before
-    min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]    # >= 5 or 10 = stronger regularization
-    max_features_list = ["sqrt", 0.5]     # try using 50% features per split
-    criterion_list = ["gini", "entropy", "log_loss"]
+    # n_estimators_list = [50, 100, 200, 500]     # number of trees
+    n_estimators_list = [500]
+    # max_depth_list = [3, 5, 7, 9]   # shallower than before
+    max_depth_list = [3, 4, 5, 6, 7]
+    # min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]    # >= 5 or 10 = stronger regularization
+    min_samples_leaf_list = [3, 4, 5, 6, 7, 8, 10, 15, 20]
+    max_features_list = ["sqrt", "log2", 0.3, 0.5, 0.7]     # try using 50% features per split
+    criterion_list = ["gini", "entropy"]
     
     for n_estimators in n_estimators_list:
         for max_depth in max_depth_list:
