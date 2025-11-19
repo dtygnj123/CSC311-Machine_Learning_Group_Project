@@ -10,8 +10,8 @@ def remove_incomplete_row(df):
     :param df: pandas df representing training data
     :return: void
     """
-    df.replace(['', '#NAME?'], pd.NA, inplace=True)
-    df.dropna(inplace=True)
+    df.replace(['', '#NAME?', np.nan], pd.NA, inplace=True)
+    # df.dropna(inplace=True)
 
 
 def lower_casing(df):
@@ -34,9 +34,9 @@ def data_split(df, train_size, val_size, test_size, seed=42):
     :param seed: random state, default = 42
     :return: partitioned df_train, df_val, df_test in order
     """
-    n = len(df)
+    n = len(df["student_id"].unique())
     rng = np.random.default_rng(seed)
-    indices = np.arange(n)
+    indices = np.arange(n + 1)
     rng.shuffle(indices)
     
     n_train = int(train_size * n)
@@ -46,11 +46,11 @@ def data_split(df, train_size, val_size, test_size, seed=42):
     
     train_idx = indices[:n_train]
     val_idx = indices[n_train:n_train + n_val + 1]
-    test_idx = indices[n_train + n_val + 1:n_train + n_val + n_test]
-    
-    df_train = df.iloc[train_idx].copy()
-    df_val = df.iloc[val_idx].copy()
-    df_test = df.iloc[test_idx].copy()
+    test_idx = indices[n_train + n_val + 1:]
+
+    df_train = df[df["student_id"].isin(train_idx)].copy()
+    df_val = df[df["student_id"].isin(val_idx)].copy()
+    df_test = df[df["student_id"].isin(test_idx)].copy()
 
     return df_train, df_val, df_test
 

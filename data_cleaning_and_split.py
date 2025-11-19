@@ -6,7 +6,7 @@ This file contains functions to clean and split data such that:
 """
 from collections import Counter
 import re
-
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -19,8 +19,8 @@ def remove_incomplete_row(df):
     :param df: pandas df representing training data
     :return: void
     """
-    df.replace(['', '#NAME?'], pd.NA, inplace=True)
-    df.dropna(inplace=True)
+    df.replace(['', '#NAME?', np.nan], pd.NA, inplace=True)
+    # df.dropna(inplace=True)
 
 
 def lower_casing(df):

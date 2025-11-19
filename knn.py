@@ -3,8 +3,7 @@ This file perform knn classification
 """
 import numpy as np
 
-# Best manhattan : Threshold = 3; k = 49
-# Best euclidean : Threshold = 3; k = 45
+# Best euclidean : Threshold = 7; k = 38
 
 
 def euclidean_distance(x_train, x_query):
