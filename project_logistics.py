@@ -15,7 +15,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import vectorization
-import data_cleaning_and_split
+import data_cleaning_and_split_refactored
 
 
 FILE_NAME = "training_data_clean.csv"
@@ -55,13 +55,13 @@ REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "i
 
 def main():
     df = pd.read_csv(FILE_NAME)
-    data_cleaning_and_split.remove_incomplete_row(df)
-    df = data_cleaning_and_split.lower_casing(df)
-    # df = data_cleaning_and_split.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    data_cleaning_and_split_refactored.remove_incomplete_row(df)
+    df = data_cleaning_and_split_refactored.lower_casing(df)
+    # df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
-    # df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25) # the word count should only look at training dataset
+    # df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25) # the word count should only look at training dataset
 
-    # df, df_a, df_f, df_i = data_cleaning_and_split.clean_text_select_words(
+    # df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
     #     df, df_train, TEXT_COL, threshold=THRESHOLD
     # )
     # df.to_csv("csv_files/only_selected_words.csv", index=False)
@@ -76,7 +76,7 @@ def main():
     # df = vectorization.vectorize_F(df, df_f)
     # df = vectorization.vectorize_I(df, df_i)
 
-    df_train, df_val, df_test = data_cleaning_and_split.data_split(df, 0.5, 0.25, 0.25)
+    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)
 
     preprocess = ColumnTransformer(
         transformers=[
@@ -116,6 +116,16 @@ def main():
     df_train = df_train.drop('label', axis=1)
     df_val = df_val.drop('label', axis=1)
     df_test = df_test.drop('label', axis=1)
+
+    df_train[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_train[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_train[FEATURE_I] = df[FEATURE_I].fillna("")
+    df_val[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_val[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_val[FEATURE_I] = df[FEATURE_I].fillna("")
+    df_test[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_test[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_test[FEATURE_I] = df[FEATURE_I].fillna("")
 
     # transform
     df_train = preprocess.fit_transform(df_train)

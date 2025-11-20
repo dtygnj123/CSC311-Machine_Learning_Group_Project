@@ -40,7 +40,7 @@ REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "i
                 "of", "for", "to", "in", "on", "at", "about", "into", "from",
                 "model", "think"}
 
-# Best euclidean : Threshold = 7; k = 38
+# Best euclidean : Threshold = 1; k = 26
 
 
 def euclidean_distance(x_train, x_query):
@@ -149,44 +149,56 @@ def main():
     main function
     :return: void
     """
-    df = pd.read_csv(FILE_NAME)
-    data_cleaning_and_split_refactored.remove_incomplete_row(df)
-    df = data_cleaning_and_split_refactored.lower_casing(df)
-    df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    acc_matrix = np.zeros((50, 50))
+    for THRESHOLD in range(1, 50):
+        df = pd.read_csv(FILE_NAME)
+        data_cleaning_and_split_refactored.remove_incomplete_row(df)
+        df = data_cleaning_and_split_refactored.lower_casing(df)
+        df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
+        df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
 
-    df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
-        df, df_train, TEXT_COL, threshold=THRESHOLD
-    )
+        df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
+            df, df_train, TEXT_COL, threshold=THRESHOLD
+        )
 
-    vectorization.vectorize_B(df)
-    vectorization.vectorize_C(df)
-    vectorization.vectorize_D(df)
-    vectorization.vectorize_E(df)
-    vectorization.vectorize_G(df)
-    vectorization.vectorize_H(df)
+        vectorization.vectorize_B(df)
+        vectorization.vectorize_C(df)
+        vectorization.vectorize_D(df)
+        vectorization.vectorize_E(df)
+        vectorization.vectorize_G(df)
+        vectorization.vectorize_H(df)
 
-    df = vectorization.vectorize_A(df, df_a)
-    df = vectorization.vectorize_F(df, df_f)
-    df = vectorization.vectorize_I(df, df_i)
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25, seed=1)
-    data_cleaning_and_split_refactored.remove_student_id(df_train)
-    data_cleaning_and_split_refactored.remove_student_id(df_val)
-    data_cleaning_and_split_refactored.remove_student_id(df_test)
-    x_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
-    x_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
-    x_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
+        df = vectorization.vectorize_A(df, df_a)
+        df = vectorization.vectorize_F(df, df_f)
+        df = vectorization.vectorize_I(df, df_i)
+        df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25, seed=1)
+        data_cleaning_and_split_refactored.remove_student_id(df_train)
+        data_cleaning_and_split_refactored.remove_student_id(df_val)
+        data_cleaning_and_split_refactored.remove_student_id(df_test)
+        x_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
+        x_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
+        x_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
 
-    for k in range(1, 50):
-        train_result = knn_predict(x_train, y_train, x_train, k=k)
-        val_result = knn_predict(x_train, y_train, x_val, k=k)
-        test_result = knn_predict(x_train, y_train, x_test, k=k)
+        for k in range(1, 50):
+            train_result = knn_predict(x_train, y_train, x_train, k=k)
+            val_result = knn_predict(x_train, y_train, x_val, k=k)
+            test_result = knn_predict(x_train, y_train, x_test, k=k)
 
-        print(k)
-        print("Train Acc", accuracy(y_train, train_result))
-        print("Val Acc", accuracy(y_val, val_result))
-        print("Test Acc", accuracy(y_test, test_result))
+            print(k)
+            print("Train Acc", accuracy(y_train, train_result))
+            print("Val Acc", accuracy(y_val, val_result))
+            print("Test Acc", accuracy(y_test, test_result))
+            acc_matrix[THRESHOLD][k] = accuracy(y_val, val_result)
+
+    max_val = np.max(acc_matrix)
+    max_index = np.unravel_index(np.argmax(acc_matrix), acc_matrix.shape)
+
+    row_idx, col_idx = max_index
+
+    print("Max value:", max_val)
+    print("Row index:", row_idx)
+    print("Column index:", col_idx)
 
 
 if __name__ == "__main__":
