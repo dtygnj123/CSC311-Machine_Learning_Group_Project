@@ -154,9 +154,9 @@ def train_random_forest():
                         model.fit(X_train, y_train)
                         y_val_pred = model.predict(X_val)
                         y_test_pred = model.predict(X_test)
-                        val_acc = accuracy_score(y_val, y_val_pred)
-                        test_acc = accuracy_score(y_test, y_test_pred)
-                        acc = (val_acc + test_acc) / 2
+                        val_accuracy = accuracy_score(y_val, y_val_pred)
+                        test_accuracy = accuracy_score(y_test, y_test_pred)
+                        acc = (val_accuracy + test_accuracy) / 2
                         
                         if acc > best_acc:
                             best_acc = acc
