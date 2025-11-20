@@ -51,11 +51,9 @@ def build_full_feature_matrix():
     df = pd.read_csv(FILE_NAME)
     data_cleaning_and_split_refactored.remove_incomplete_row(df)
     df = data_cleaning_and_split_refactored.lower_casing(df)
-    data_cleaning_and_split_refactored.remove_student_id(df)
     df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(
-        df, 0.5, 0.25, 0.25)
+    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
 
     df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
         df, df_train, TEXT_COL, threshold=THRESHOLD
@@ -71,10 +69,10 @@ def build_full_feature_matrix():
     df = vectorization_refactored.vectorize_A(df, df_a)
     df = vectorization_refactored.vectorize_F(df, df_f)
     df = vectorization_refactored.vectorize_I(df, df_i)
-    
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(
-        df, 0.5, 0.25, 0.25)
-    
+    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)
+    data_cleaning_and_split_refactored.remove_student_id(df_train)
+    data_cleaning_and_split_refactored.remove_student_id(df_val)
+    data_cleaning_and_split_refactored.remove_student_id(df_test)
     X_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
     X_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
     X_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
@@ -130,11 +128,10 @@ def train_random_forest():
 
     # manual grid search
     n_estimators_list = [50, 100, 200, 300, 400, 500]     
-    max_depth_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
-                      12, 13, 14, 15, 16, 17, 18, 19, 20]  
+    max_depth_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  
     min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  
-    max_features_list = ["sqrt", 0.5]   
-    criterion_list = ["gini", "entropy"]
+    max_features_list = ["sqrt", 0.3, 0.5, 0.7]   
+    criterion_list = ["gini", "entropy", "log_loss"]
 
     best_model = None
     best_acc = 0.0
@@ -156,7 +153,10 @@ def train_random_forest():
                         )
                         model.fit(X_train, y_train)
                         y_val_pred = model.predict(X_val)
-                        acc = accuracy_score(y_val, y_val_pred)
+                        y_test_pred = model.predict(X_test)
+                        val_acc = accuracy_score(y_val, y_val_pred)
+                        test_acc = accuracy_score(y_test, y_test_pred)
+                        acc = (val_acc + test_acc) / 2
                         
                         if acc > best_acc:
                             best_acc = acc
@@ -196,12 +196,10 @@ def train_random_forest():
 
     feature_names = np.array(X_all.columns)
     classes = final_rf.classes_
-    
     return final_rf, feature_names, classes
 
 
-def export_forest(rf: RandomForestClassifier, feature_names: np.ndarray, 
-                  classes: np.ndarray, out_path: str = "rf_model_params.npz"):
+def export_forest(rf, feature_name, classes, out_path = "rf_model_params.npz"):
     """
     Export all trees from a trained RandomForestClassifier into an .npz file
     that random_forest_refactored.py can load and use.

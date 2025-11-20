@@ -213,3 +213,9 @@ def vectorize_I(df, vocab_df):
     bow_df = pd.DataFrame(X, columns=[f"I_{w}" for w in vocab], index=df.index)
     df = pd.concat([df.drop(columns=[FEATURE_I]), bow_df], axis=1)
     return df
+
+
+
+
+
+
