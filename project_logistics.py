@@ -117,6 +117,16 @@ def main():
     df_val = df_val.drop('label', axis=1)
     df_test = df_test.drop('label', axis=1)
 
+    df_train[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_train[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_train[FEATURE_I] = df[FEATURE_I].fillna("")
+    df_val[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_val[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_val[FEATURE_I] = df[FEATURE_I].fillna("")
+    df_test[FEATURE_A] = df[FEATURE_A].fillna("")
+    df_test[FEATURE_F] = df[FEATURE_F].fillna("")
+    df_test[FEATURE_I] = df[FEATURE_I].fillna("")
+
     # transform
     df_train = preprocess.fit_transform(df_train)
     df_val = preprocess.transform(df_val)
