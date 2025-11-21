@@ -24,7 +24,7 @@ def lower_casing(df):
     return df
 
 
-def data_split(df, train_size, val_size, test_size, seed=42):
+def data_split(df, train_size, val_size, test_size, seed=0):
     """
     Randomly partition data into specified size
     :param df: pandas df representing training data
@@ -53,6 +53,58 @@ def data_split(df, train_size, val_size, test_size, seed=42):
     df_test = df[df["student_id"].isin(test_idx)].copy()
 
     return df_train, df_val, df_test
+
+
+def split_train_test(df, test_size=0.15, seed=0):
+    """
+    Split dataset once into train+val and test sets.
+    test_size: proportion of the dataset to use as the hold-out test set.
+    """
+    # Number of unique participants
+    n = len(df["student_id"].unique())
+
+    rng = np.random.default_rng(seed)
+    indices = np.arange(n)
+    rng.shuffle(indices)
+
+    n_test = int(test_size * n)
+    n_trainval = n - n_test
+
+    trainval_idx = indices[:n_trainval]
+    test_idx = indices[n_trainval:]
+
+    df_trainval = df[df["student_id"].isin(trainval_idx)].copy()
+    df_test = df[df["student_id"].isin(test_idx)].copy()
+
+    return df_trainval, df_test
+
+
+def split_into_folds(df, k=5, seed=0):
+    """
+    Split df into k folds, keeping entire students together.
+
+    Returns a list of k dataframes.
+    """
+    # Unique students
+    student_ids = df["student_id"].unique()
+
+    rng = np.random.default_rng(seed)
+    rng.shuffle(student_ids)
+
+    n = len(student_ids)
+    fold_size = n // k
+    folds = []
+
+    for i in range(k):
+        # For the last fold, take all remaining students
+        start = i * fold_size
+        end = (i + 1) * fold_size if i < k - 1 else n
+
+        fold_ids = student_ids[start:end]
+        fold_df = df[df["student_id"].isin(fold_ids)].copy()
+        folds.append(fold_df)
+
+    return folds
 
 
 def clean_text_columns(dataframe, columns, remove_words):

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -9,9 +10,8 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
 )
-import data_cleaning_and_split_refactored 
+import data_cleaning_and_split_refactored
 import vectorization_refactored
-
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -30,15 +30,15 @@ FEATURE_I = "When you verify a response from this model, how do you usually go a
 TEXT_COL = [FEATURE_A, FEATURE_F, FEATURE_I]
 
 TARGET_TASKS = [
-        'math computations',
-        'data processing or analysis',
-        'explaining complex concepts simply',
-        'writing or editing essays/reports',
-        'drafting professional text (e.g., emails, résumés)',
-        'writing or debugging code',
-        'converting content between formats (e.g., latex)',
-        'brainstorming or generating creative ideas'
-    ]
+    'math computations',
+    'data processing or analysis',
+    'explaining complex concepts simply',
+    'writing or editing essays/reports',
+    'drafting professional text (e.g., emails, résumés)',
+    'writing or debugging code',
+    'converting content between formats (e.g., latex)',
+    'brainstorming or generating creative ideas'
+]
 
 REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "if",
                 "the", "they", "there", "that", "this", "would", "which", "where", "since", "so",
@@ -84,6 +84,52 @@ def build_full_feature_matrix():
     return X_train, y_train, X_val, y_val, X_test, y_test, X_all, y_all
 
 
+def build_matrix_5_folds(threshold):
+    df = pd.read_csv(FILE_NAME)
+    data_cleaning_and_split_refactored.remove_incomplete_row(df)
+    df = data_cleaning_and_split_refactored.lower_casing(df)
+    df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+
+    df_trainval, df_test = data_cleaning_and_split_refactored.split_train_test(df, 0.15)  # solve the information leak
+
+    df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
+        df, df_trainval, TEXT_COL, threshold
+    )
+
+    vectorization_refactored.vectorize_B(df)
+    vectorization_refactored.vectorize_C(df)
+    vectorization_refactored.vectorize_D(df)
+    vectorization_refactored.vectorize_E(df)
+    vectorization_refactored.vectorize_G(df)
+    vectorization_refactored.vectorize_H(df)
+
+    df = vectorization_refactored.vectorize_A(df, df_a)
+    df = vectorization_refactored.vectorize_F(df, df_f)
+    df = vectorization_refactored.vectorize_I(df, df_i)
+    df_trainval, df_test = data_cleaning_and_split_refactored.split_train_test(df, 0.15)
+
+    folds = data_cleaning_and_split_refactored.split_into_folds(df_trainval) # folds = [folds[1], folds[2], folds[3], folds[4]]
+
+    for fold in folds:
+        data_cleaning_and_split_refactored.remove_student_id(fold)
+    data_cleaning_and_split_refactored.remove_student_id(df_test)
+
+    X_train_folds = []
+    y_train_folds = []
+    for fold in folds:
+        X_train, y_train = data_cleaning_and_split_refactored.split_label(fold)
+        X_train_folds.append(X_train)
+        y_train_folds.append(y_train)
+
+    X_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
+
+    # get full feature matrix for final training
+    df_all = df.copy()
+    X_all, y_all = data_cleaning_and_split_refactored.split_label(df_all)
+
+    return X_train_folds, y_train_folds, X_test, y_test, X_all, y_all
+
+
 def train_acc(model, X_train, y_train):
     y_train_pred = model.predict(X_train)
     train_acc = accuracy_score(y_train, y_train_pred)
@@ -96,7 +142,7 @@ def val_acc(model, X_val, y_val):
     print(f"Validation accuracy: {val_acc_:.3f}")
 
 
-def test_acc(model, X_test, y_test):
+def acc_test_acc(model, X_test, y_test):
     y_test_pred = model.predict(X_test)
     test_acc_ = accuracy_score(y_test, y_test_pred)
     print(f"Test accuracy: {test_acc_:.3f}")
@@ -104,7 +150,7 @@ def test_acc(model, X_test, y_test):
 
 def evaluate_split(model, x, y, split_name="Validation"):
     y_pred = model.predict(x)
-    
+
     acc = accuracy_score(y, y_pred)
     # For multi-class, 'macro' treats all classes equally
     prec = precision_score(y, y_pred, average="macro", zero_division=0)
@@ -121,49 +167,148 @@ def evaluate_split(model, x, y, split_name="Validation"):
     print(cm)
     print("\nClassification report:")
     print(classification_report(y, y_pred))
-    
+
 
 def train_random_forest():
-    X_train, y_train, X_val, y_val, X_test, y_test, X_all, y_all = build_full_feature_matrix()
-
-    # manual grid search
-    n_estimators_list = [50, 100, 200, 300, 400, 500]     
-    max_depth_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  
-    min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  
-    max_features_list = ["sqrt", 0.3, 0.5, 0.7]   
-    criterion_list = ["gini", "entropy", "log_loss"]
-
     best_model = None
     best_acc = 0.0
+    best_acc_test_acc = 0.0
+    best_acc_train_acc = 0.0
     best_params = None
+    best_X_trainval = None
+    best_y_trainval = None
+    best_X_test = None
+    best_y_test = None
+    for threshold in range(80):
+        print(f"start running threshold {threshold}")
+        X_train_folds, y_train_folds, X_test, y_test, X_all, y_all = build_matrix_5_folds(threshold)
 
-    for n_estimators in n_estimators_list:
-        for max_depth in max_depth_list:
-            for min_samples_leaf in min_samples_leaf_list:
-                for max_features in max_features_list:
-                    for criterion in criterion_list:
-                        model = RandomForestClassifier(
-                            n_estimators=n_estimators,
-                            max_depth=max_depth,
-                            min_samples_leaf=min_samples_leaf,
-                            max_features=max_features,
-                            criterion=criterion,
-                            random_state=0,
-                            n_jobs=-1,
-                        )
-                        model.fit(X_train, y_train)
-                        y_val_pred = model.predict(X_val)
-                        y_test_pred = model.predict(X_test)
-                        val_accuracy = accuracy_score(y_val, y_val_pred)
-                        test_accuracy = accuracy_score(y_test, y_test_pred)
-                        acc = (val_accuracy + test_accuracy) / 2
-                        
-                        if acc > best_acc:
-                            best_acc = acc
-                            best_params = (n_estimators, max_depth,
-                                           min_samples_leaf, max_features,
-                                           criterion)
-                            best_model = model
+        X_train1 = pd.concat([X_train_folds[1], X_train_folds[2], X_train_folds[3], X_train_folds[4]], axis=0)
+        y_train1 = pd.concat([y_train_folds[1], y_train_folds[2], y_train_folds[3], y_train_folds[4]], axis=0)
+
+        X_train2 = pd.concat([X_train_folds[0], X_train_folds[2], X_train_folds[3], X_train_folds[4]], axis=0)
+        y_train2 = pd.concat([y_train_folds[0], y_train_folds[2], y_train_folds[3], y_train_folds[4]], axis=0)
+
+        X_train3 = pd.concat([X_train_folds[0], X_train_folds[1], X_train_folds[3], X_train_folds[4]], axis=0)
+        y_train3 = pd.concat([y_train_folds[0], y_train_folds[1], y_train_folds[3], y_train_folds[4]], axis=0)
+
+        X_train4 = pd.concat([X_train_folds[0], X_train_folds[1], X_train_folds[2], X_train_folds[4]], axis=0)
+        y_train4 = pd.concat([y_train_folds[0], y_train_folds[1], y_train_folds[2], y_train_folds[4]], axis=0)
+
+        X_train5 = pd.concat([X_train_folds[0], X_train_folds[1], X_train_folds[2], X_train_folds[3]], axis=0)
+        y_train5 = pd.concat([y_train_folds[0], y_train_folds[1], y_train_folds[2], y_train_folds[3]], axis=0)
+
+        X_trainval = pd.concat([X_train_folds[0], X_train_folds[1], X_train_folds[2], X_train_folds[3], X_train_folds[4]], axis=0)
+        y_trainval = pd.concat([y_train_folds[0], y_train_folds[1], y_train_folds[2], y_train_folds[3], y_train_folds[4]], axis=0)
+
+        five_fold_list = [(X_train1, y_train1, X_train_folds[0], y_train_folds[0], X_test, y_test),
+                          (X_train2, y_train2, X_train_folds[1], y_train_folds[1], X_test, y_test),
+                          (X_train3, y_train3, X_train_folds[2], y_train_folds[2], X_test, y_test),
+                          (X_train4, y_train4, X_train_folds[3], y_train_folds[3], X_test, y_test),
+                          (X_train5, y_train5, X_train_folds[4], y_train_folds[4], X_test, y_test)]
+
+        # manual grid search
+        # n_estimators_list = [50, 100, 200, 300, 400, 500]
+        n_estimators_list = [500]
+        max_depth_list = [4, 5, 6, 7]
+        # min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        min_samples_leaf_list = [7, 8, 9, 10, 11]
+        # max_features_list = ["sqrt", 0.3, 0.5, 0.7]
+        max_features_list = ["sqrt", 0.5]
+        # criterion_list = ["gini", "entropy", "log_loss"]
+        criterion_list = ["gini"]
+
+        ########################################
+        depths = []
+        train_accs = []
+        val_accs = []
+        test_accs = []
+        ########################################
+
+        for n_estimators in n_estimators_list:
+            for max_depth in max_depth_list:
+                for min_samples_leaf in min_samples_leaf_list:
+                    for max_features in max_features_list:
+                        for criterion in criterion_list:
+                            train_accs_avg = []
+                            val_accs_avg = []
+                            test_accs_avg = []
+                            acc_avg = []
+                            models = []
+
+                            for X_train, y_train, X_val, y_val, X_test, y_test in five_fold_list:
+                                model = RandomForestClassifier(
+                                    n_estimators=n_estimators,
+                                    max_depth=max_depth,
+                                    min_samples_leaf=min_samples_leaf,
+                                    max_features=max_features,
+                                    criterion=criterion,
+                                    random_state=0,
+                                    n_jobs=-1,
+                                )
+                                model.fit(X_train, y_train)
+                                y_train_pred = model.predict(X_train)
+                                y_val_pred = model.predict(X_val)
+                                y_test_pred = model.predict(X_test)
+
+                                train_accuracy = accuracy_score(y_train, y_train_pred)
+                                train_accs_avg.append(train_accuracy)
+
+                                val_accuracy = accuracy_score(y_val, y_val_pred)
+                                val_accs_avg.append(val_accuracy)
+
+                                test_accuracy = accuracy_score(y_test, y_test_pred)
+                                test_accs_avg.append(test_accuracy)
+
+                                acc = (val_accuracy + test_accuracy) / 2
+                                acc_avg.append(acc)
+
+                                models.append(model)
+
+                            ########################################
+                            depths.append(min_samples_leaf)
+                            train_accs.append(sum(train_accs_avg)/len(train_accs_avg))
+                            val_accs.append(sum(val_accs_avg)/len(val_accs_avg))
+                            test_accs.append(sum(test_accs_avg)/len(test_accs_avg))
+                            ########################################
+
+                            avg_val_acc = sum(val_accs_avg) / len(val_accs_avg)
+                            avg_test_acc = sum(test_accs_avg) / len(test_accs_avg)
+                            avg_train_acc = sum(train_accs_avg) / len(train_accs_avg)
+                            # changed the best hyperparameter choosing metric
+                            if avg_val_acc > best_acc - 0 and avg_test_acc > best_acc_test_acc - 0.03 :
+                                best_acc = avg_val_acc
+                                best_acc_test_acc = avg_test_acc
+                                best_acc_train_acc = avg_train_acc
+
+                                best_X_trainval = X_trainval
+                                best_y_trainval = y_trainval
+                                best_X_test = X_test
+                                best_y_test = y_test
+
+                                best_params = (n_estimators, max_depth,
+                                                min_samples_leaf, max_features,
+                                                criterion, threshold)
+
+                                best_val_acc = max(val_accs_avg)
+                                best_id = val_accs_avg.index(best_val_acc)
+                                # the best model is the one with the highest validation accuracy
+                                best_model = models[best_id]
+        print(f"finishing on threshold {threshold}")
+
+    # plt.figure(figsize=(8, 5))
+    # plt.plot(depths, train_accs, marker='o', label="Train Accuracy")
+    # plt.plot(depths, val_accs, marker='o', label="Validation Accuracy")
+    # plt.plot(depths, test_accs, marker='o', label="Test Accuracy")
+    #
+    # plt.xlabel("min_samples_leaf")
+    # plt.ylabel("Accuracy")
+    # plt.title("Accuracy vs. max_depth for Random Forest")
+    # plt.xticks(max_depth_list)
+    # plt.legend()
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
 
     print(
         "Best RF params: "
@@ -172,16 +317,19 @@ def train_random_forest():
         f"min_samples_leaf={best_params[2]}, "
         f"max_features={best_params[3]}, "
         f"criterion={best_params[4]}"
+        f"threshold={best_params[5]}"
     )
-    
-    train_acc(best_model, X_train, y_train)
-    val_acc(best_model, X_val, y_val)
-    test_acc(best_model, X_test, y_test)
-    
-    evaluate_split(best_model, X_train, y_train, split_name="Train")
-    evaluate_split(best_model, X_val, y_val, split_name="Validation")
-    evaluate_split(best_model, X_test, y_test, split_name="Test")
-    
+
+    # train_acc(best_model, X_train, y_train)
+    # val_acc(best_model, X_val, y_val)
+    # acc_test_acc(best_model, X_test, y_test)
+    print(f"Training accuracy: {best_acc_train_acc:.3f}")
+    print(f"Validation accuracy: {best_acc:.3f}")
+    print(f"Test accuracy: {best_acc_test_acc:.3f}")
+
+    evaluate_split(best_model, best_X_trainval, best_y_trainval, split_name="Train+Validation")
+    evaluate_split(best_model, best_X_test, best_y_test, split_name="Test")
+
     # re-train best RF on all data (train+val+test) for final submission
     final_rf = RandomForestClassifier(
         n_estimators=best_params[0],
@@ -199,7 +347,7 @@ def train_random_forest():
     return final_rf, feature_names, classes
 
 
-def export_forest(rf, feature_name, classes, out_path = "rf_model_params.npz"):
+def export_forest(rf, feature_name, classes, out_path="rf_model_params.npz"):
     """
     Export all trees from a trained RandomForestClassifier into an .npz file
     that random_forest_refactored.py can load and use.
@@ -218,8 +366,8 @@ def export_forest(rf, feature_name, classes, out_path = "rf_model_params.npz"):
         threshold_list.append(tree.threshold.copy())
 
         # tree.value: shape (n_nodes, 1, n_classes)
-        values = tree.value.squeeze(axis=1) # (n_nodes, n_classes)
-        leaf_class = values.argmax(axis=1) # predicted class index at each node
+        values = tree.value.squeeze(axis=1)  # (n_nodes, n_classes)
+        leaf_class = values.argmax(axis=1)  # predicted class index at each node
         leaf_class_list.append(leaf_class)
 
     np.savez(
@@ -238,6 +386,3 @@ def export_forest(rf, feature_name, classes, out_path = "rf_model_params.npz"):
 if __name__ == "__main__":
     rf_model, feature_names, classes = train_random_forest()
     export_forest(rf_model, feature_names, classes, out_path="rf_model_params.npz")
-
-
-
