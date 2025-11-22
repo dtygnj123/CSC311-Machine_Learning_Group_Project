@@ -3,8 +3,15 @@ This file perform knn classification
 """
 import numpy as np
 import pandas as pd
+import sklearn.metrics
+from matplotlib import pyplot as plt
+
 import vectorization
 import data_cleaning_and_split_refactored
+
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
 
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
@@ -14,7 +21,7 @@ FEATURE_E = "For which types of tasks do you feel this model tends to give subop
 FEATURE_G = "How often do you expect this model to provide responses with references or supporting evidence?"
 FEATURE_H = "How often do you verify this model's responses?"
 
-THRESHOLD = 6
+THRESHOLD = 1
 
 FEATURE_A = "In your own words, what kinds of tasks would you use this model for?"
 FEATURE_F = "Think of one task where this model gave you a suboptimal response. What did the response look like, and why did you find it suboptimal?"
@@ -149,56 +156,70 @@ def main():
     main function
     :return: void
     """
-    acc_matrix = np.zeros((50, 50))
-    for THRESHOLD in range(1, 50):
-        df = pd.read_csv(FILE_NAME)
-        data_cleaning_and_split_refactored.remove_incomplete_row(df)
-        df = data_cleaning_and_split_refactored.lower_casing(df)
-        df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+    df = pd.read_csv(FILE_NAME)
+    data_cleaning_and_split_refactored.remove_incomplete_row(df)
+    df = data_cleaning_and_split_refactored.lower_casing(df)
+    df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
 
-        df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
+    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
 
-        df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
-            df, df_train, TEXT_COL, threshold=THRESHOLD
-        )
+    df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
+        df, df_train, TEXT_COL, threshold=THRESHOLD
+    )
 
-        vectorization.vectorize_B(df)
-        vectorization.vectorize_C(df)
-        vectorization.vectorize_D(df)
-        vectorization.vectorize_E(df)
-        vectorization.vectorize_G(df)
-        vectorization.vectorize_H(df)
+    vectorization.vectorize_B(df)
+    vectorization.vectorize_C(df)
+    vectorization.vectorize_D(df)
+    vectorization.vectorize_E(df)
+    vectorization.vectorize_G(df)
+    vectorization.vectorize_H(df)
 
-        df = vectorization.vectorize_A(df, df_a)
-        df = vectorization.vectorize_F(df, df_f)
-        df = vectorization.vectorize_I(df, df_i)
-        df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25, seed=1)
-        data_cleaning_and_split_refactored.remove_student_id(df_train)
-        data_cleaning_and_split_refactored.remove_student_id(df_val)
-        data_cleaning_and_split_refactored.remove_student_id(df_test)
-        x_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
-        x_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
-        x_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
+    df = vectorization.vectorize_A(df, df_a)
+    df = vectorization.vectorize_F(df, df_f)
+    df = vectorization.vectorize_I(df, df_i)
+    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25, seed=1)
+    data_cleaning_and_split_refactored.remove_student_id(df_train)
+    data_cleaning_and_split_refactored.remove_student_id(df_val)
+    data_cleaning_and_split_refactored.remove_student_id(df_test)
+    x_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
+    x_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
+    x_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
 
-        for k in range(1, 50):
-            train_result = knn_predict(x_train, y_train, x_train, k=k)
-            val_result = knn_predict(x_train, y_train, x_val, k=k)
-            test_result = knn_predict(x_train, y_train, x_test, k=k)
+    valid_acc = []
+    for k in range(1, 200):
+        break
+        train_result = knn_predict(x_train, y_train, x_train, k=k)
+        val_result = knn_predict(x_train, y_train, x_val, k=k)
+        test_result = knn_predict(x_train, y_train, x_test, k=k)
+        print("k", k)
+        print("Train Acc", accuracy(y_train, train_result))
+        print("Val Acc", accuracy(y_val, val_result))
+        print("Test Acc", accuracy(y_test, test_result))
+        valid_acc.append(accuracy(y_val, val_result))
 
-            print(k)
-            print("Train Acc", accuracy(y_train, train_result))
-            print("Val Acc", accuracy(y_val, val_result))
-            print("Test Acc", accuracy(y_test, test_result))
-            acc_matrix[THRESHOLD][k] = accuracy(y_val, val_result)
+    # plt.title("Validatation Accuracy for kNN model (THRESHOLD = 1; Distance = euclidean)")
+    # plt.plot(range(1, 200), valid_acc)
+    # plt.xlabel("k")
+    # plt.ylabel("Validation accuracy")
+    # plt.show()
 
-    max_val = np.max(acc_matrix)
-    max_index = np.unravel_index(np.argmax(acc_matrix), acc_matrix.shape)
-
-    row_idx, col_idx = max_index
-
-    print("Max value:", max_val)
-    print("Row index:", row_idx)
-    print("Column index:", col_idx)
+    # Final test set inference
+    test_result = knn_predict(x_train, y_train, x_test, k=26)
+    train_result = knn_predict(x_train, y_train, x_train, k=26)
+    val_result = knn_predict(x_train, y_train, x_val, k=26)
+    print("Train Acc", accuracy(y_train, train_result))
+    print("Val Acc", accuracy(y_val, val_result))
+    print("Test Acc", accuracy(y_test, test_result))
+    print(classification_report(y_test, test_result))
+    # compute confusion matrix
+    cm = confusion_matrix(y_test, test_result, labels=["chatgpt", "claude", "gemini"])
+    print(cm)
+    # plot
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=["chatgpt", "claude", "gemini"])
+    disp.plot(cmap="Blues", values_format="d")
+    plt.title("Confusion Matrix")
+    plt.show()
 
 
 if __name__ == "__main__":
