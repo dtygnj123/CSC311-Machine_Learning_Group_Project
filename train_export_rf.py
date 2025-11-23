@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from pandas.core.util.hashing import hash_pandas_object
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -8,7 +9,7 @@ from sklearn.metrics import (
     classification_report,
     precision_score,
     recall_score,
-    f1_score,
+    f1_score, ConfusionMatrixDisplay,
 )
 import data_cleaning_and_split_refactored
 import vectorization_refactored
@@ -47,41 +48,41 @@ REMOVE_WORDS = {"a", "an", "and", "or", "do", "does", "be", "so", "by", "as", "i
                 "model", "think"}
 
 
-def build_full_feature_matrix():
-    df = pd.read_csv(FILE_NAME)
-    data_cleaning_and_split_refactored.remove_incomplete_row(df)
-    df = data_cleaning_and_split_refactored.lower_casing(df)
-    df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
-
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
-
-    df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
-        df, df_train, TEXT_COL, threshold=THRESHOLD
-    )
-
-    vectorization_refactored.vectorize_B(df)
-    vectorization_refactored.vectorize_C(df)
-    vectorization_refactored.vectorize_D(df)
-    vectorization_refactored.vectorize_E(df)
-    vectorization_refactored.vectorize_G(df)
-    vectorization_refactored.vectorize_H(df)
-
-    df = vectorization_refactored.vectorize_A(df, df_a)
-    df = vectorization_refactored.vectorize_F(df, df_f)
-    df = vectorization_refactored.vectorize_I(df, df_i)
-    df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)
-    data_cleaning_and_split_refactored.remove_student_id(df_train)
-    data_cleaning_and_split_refactored.remove_student_id(df_val)
-    data_cleaning_and_split_refactored.remove_student_id(df_test)
-    X_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
-    X_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
-    X_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
-
-    # get full feature matrix for final training
-    df_all = df.copy()
-    X_all, y_all = data_cleaning_and_split_refactored.split_label(df_all)
-
-    return X_train, y_train, X_val, y_val, X_test, y_test, X_all, y_all
+# def build_full_feature_matrix():
+#     df = pd.read_csv(FILE_NAME)
+#     data_cleaning_and_split_refactored.remove_incomplete_row(df)
+#     df = data_cleaning_and_split_refactored.lower_casing(df)
+#     df = data_cleaning_and_split_refactored.clean_text_columns(df, TEXT_COL, REMOVE_WORDS)
+#
+#     df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)  # solve the information leak
+#
+#     df, df_a, df_f, df_i = data_cleaning_and_split_refactored.clean_text_select_words(
+#         df, df_train, TEXT_COL, threshold=THRESHOLD
+#     )
+#
+#     vectorization_refactored.vectorize_B(df)
+#     vectorization_refactored.vectorize_C(df)
+#     vectorization_refactored.vectorize_D(df)
+#     vectorization_refactored.vectorize_E(df)
+#     vectorization_refactored.vectorize_G(df)
+#     vectorization_refactored.vectorize_H(df)
+#
+#     df = vectorization_refactored.vectorize_A(df, df_a)
+#     df = vectorization_refactored.vectorize_F(df, df_f)
+#     df = vectorization_refactored.vectorize_I(df, df_i)
+#     df_train, df_val, df_test = data_cleaning_and_split_refactored.data_split(df, 0.5, 0.25, 0.25)
+#     data_cleaning_and_split_refactored.remove_student_id(df_train)
+#     data_cleaning_and_split_refactored.remove_student_id(df_val)
+#     data_cleaning_and_split_refactored.remove_student_id(df_test)
+#     X_train, y_train = data_cleaning_and_split_refactored.split_label(df_train)
+#     X_val, y_val = data_cleaning_and_split_refactored.split_label(df_val)
+#     X_test, y_test = data_cleaning_and_split_refactored.split_label(df_test)
+#
+#     # get full feature matrix for final training
+#     df_all = df.copy()
+#     X_all, y_all = data_cleaning_and_split_refactored.split_label(df_all)
+#
+#     return X_train, y_train, X_val, y_val, X_test, y_test, X_all, y_all
 
 
 def build_matrix_5_folds(threshold):
@@ -151,6 +152,20 @@ def acc_test_acc(model, X_test, y_test):
 def evaluate_split(model, x, y, split_name="Validation"):
     y_pred = model.predict(x)
 
+    # print("Train Acc", accuracy(y_train, train_result))
+    # print("Val Acc", accuracy(y_val, val_result))
+    # print("Test Acc", accuracy(y_test, test_result))
+    print(classification_report(y, y_pred))
+    # compute confusion matrix
+    cm = confusion_matrix(y, y_pred, labels=["chatgpt", "claude", "gemini"])
+    print(cm)
+    # plot
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=["chatgpt", "claude", "gemini"])
+    disp.plot(cmap="Blues", values_format="d")
+    plt.title("Confusion Matrix")
+    plt.show()
+
     acc = accuracy_score(y, y_pred)
     # For multi-class, 'macro' treats all classes equally
     prec = precision_score(y, y_pred, average="macro", zero_division=0)
@@ -179,7 +194,7 @@ def train_random_forest():
     best_y_trainval = None
     best_X_test = None
     best_y_test = None
-    for threshold in range(80):
+    for threshold in range(40, 81, 2):
         print(f"start running threshold {threshold}")
         X_train_folds, y_train_folds, X_test, y_test, X_all, y_all = build_matrix_5_folds(threshold)
 
@@ -208,15 +223,16 @@ def train_random_forest():
                           (X_train5, y_train5, X_train_folds[4], y_train_folds[4], X_test, y_test)]
 
         # manual grid search
-        # n_estimators_list = [50, 100, 200, 300, 400, 500]
-        n_estimators_list = [500]
-        max_depth_list = [4, 5, 6, 7]
-        # min_samples_leaf_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        min_samples_leaf_list = [7, 8, 9, 10, 11]
-        # max_features_list = ["sqrt", 0.3, 0.5, 0.7]
-        max_features_list = ["sqrt", 0.5]
-        # criterion_list = ["gini", "entropy", "log_loss"]
-        criterion_list = ["gini"]
+        n_estimators_list = [300, 400, 500]
+        # n_estimators_list = [500]
+        max_depth_list = [3, 4, 5, 6, 7, 8]
+        # max_depth_list = [6]
+        min_samples_leaf_list = [4, 5, 6, 7, 8]
+        # min_samples_leaf_list = [6]
+        max_features_list = ["sqrt", 0.5, 0.7]
+        # max_features_list = ["sqrt", 0.3]
+        criterion_list = ["gini", "entropy"]
+        # criterion_list = ["gini"]
 
         ########################################
         depths = []
@@ -243,7 +259,7 @@ def train_random_forest():
                                     min_samples_leaf=min_samples_leaf,
                                     max_features=max_features,
                                     criterion=criterion,
-                                    random_state=0,
+                                    random_state=42,
                                     n_jobs=-1,
                                 )
                                 model.fit(X_train, y_train)
@@ -276,7 +292,8 @@ def train_random_forest():
                             avg_test_acc = sum(test_accs_avg) / len(test_accs_avg)
                             avg_train_acc = sum(train_accs_avg) / len(train_accs_avg)
                             # changed the best hyperparameter choosing metric
-                            if avg_val_acc > best_acc - 0 and avg_test_acc > best_acc_test_acc - 0.03 :
+                            # if avg_val_acc > best_acc - 0 and avg_test_acc > best_acc_test_acc - 0.03 :
+                            if avg_val_acc > best_acc:
                                 best_acc = avg_val_acc
                                 best_acc_test_acc = avg_test_acc
                                 best_acc_train_acc = avg_train_acc
@@ -337,7 +354,7 @@ def train_random_forest():
         min_samples_leaf=best_params[2],
         max_features=best_params[3],
         criterion=best_params[4],
-        random_state=0,
+        random_state=42,
         n_jobs=-1,
     )
     final_rf.fit(X_all, y_all)

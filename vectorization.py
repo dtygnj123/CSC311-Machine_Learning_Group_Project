@@ -4,6 +4,8 @@ This file contains functions to vectorize features.
 import numpy as np
 import pandas as pd
 import re
+
+from pandas.core.util.hashing import hash_pandas_object
 from sklearn.preprocessing import MultiLabelBinarizer
 
 FILE_NAME = "training_data_clean.csv"
