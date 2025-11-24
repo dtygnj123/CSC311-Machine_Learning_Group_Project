@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import re
 
+from pandas.core.util.hashing import hash_pandas_object
+
 FILE_NAME = "training_data_clean.csv"
 FEATURE_B = "How likely are you to use this model for academic tasks?"
 FEATURE_C = "Which types of tasks do you feel this model handles best? (Select all that apply.)"

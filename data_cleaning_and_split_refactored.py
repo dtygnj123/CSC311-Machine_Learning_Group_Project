@@ -24,35 +24,87 @@ def lower_casing(df):
     return df
 
 
-def data_split(df, train_size, val_size, test_size, seed=42):
-    """
-    Randomly partition data into specified size
-    :param df: pandas df representing training data
-    :param train_size: float, represent train_size in percentage
-    :param val_size: float, represent val_size in percentage
-    :param test_size: float, represent test_size in percentage
-    :param seed: random state, default = 42
-    :return: partitioned df_train, df_val, df_test in order
-    """
-    n = len(df["student_id"].unique())
-    rng = np.random.default_rng(seed)
-    indices = np.arange(n + 1)
-    rng.shuffle(indices)
-    
-    n_train = int(train_size * n)
-    n_val = int(val_size * n)
-    # whatever is left goes to test
-    n_test = n - n_train - n_val
-    
-    train_idx = indices[:n_train]
-    val_idx = indices[n_train:n_train + n_val + 1]
-    test_idx = indices[n_train + n_val + 1:]
+# def data_split(df, train_size, val_size, test_size, seed=42):
+#     """
+#     Randomly partition data into specified size
+#     :param df: pandas df representing training data
+#     :param train_size: float, represent train_size in percentage
+#     :param val_size: float, represent val_size in percentage
+#     :param test_size: float, represent test_size in percentage
+#     :param seed: random state, default = 42
+#     :return: partitioned df_train, df_val, df_test in order
+#     """
+#     n = len(df["student_id"].unique())
+#     rng = np.random.default_rng(seed)
+#     indices = np.arange(n + 1)
+#     rng.shuffle(indices)
+#
+#     n_train = int(train_size * n)
+#     n_val = int(val_size * n)
+#     # whatever is left goes to test
+#     n_test = n - n_train - n_val
+#
+#     train_idx = indices[:n_train]
+#     val_idx = indices[n_train:n_train + n_val + 1]
+#     test_idx = indices[n_train + n_val + 1:]
+#
+#     df_train = df[df["student_id"].isin(train_idx)].copy()
+#     df_val = df[df["student_id"].isin(val_idx)].copy()
+#     df_test = df[df["student_id"].isin(test_idx)].copy()
+#
+#     return df_train, df_val, df_test
 
-    df_train = df[df["student_id"].isin(train_idx)].copy()
-    df_val = df[df["student_id"].isin(val_idx)].copy()
+
+def split_train_test(df, test_size=0.15, seed=42):
+    """
+    Split dataset once into train+val and test sets.
+    test_size: proportion of the dataset to use as the hold-out test set.
+    """
+    # Number of unique participants
+    n = len(df["student_id"].unique())
+
+    rng = np.random.default_rng(seed)
+    indices = np.arange(n)
+    rng.shuffle(indices)
+
+    n_test = int(test_size * n)
+    n_trainval = n - n_test
+
+    trainval_idx = indices[:n_trainval]
+    test_idx = indices[n_trainval:]
+
+    df_trainval = df[df["student_id"].isin(trainval_idx)].copy()
     df_test = df[df["student_id"].isin(test_idx)].copy()
 
-    return df_train, df_val, df_test
+    return df_trainval, df_test
+
+
+def split_into_folds(df, k=5, seed=42):
+    """
+    Split df into k folds, keeping entire students together.
+
+    Returns a list of k dataframes.
+    """
+    # Unique students
+    student_ids = df["student_id"].unique()
+
+    rng = np.random.default_rng(seed)
+    rng.shuffle(student_ids)
+
+    n = len(student_ids)
+    fold_size = n // k
+    folds = []
+
+    for i in range(k):
+        # For the last fold, take all remaining students
+        start = i * fold_size
+        end = (i + 1) * fold_size if i < k - 1 else n
+
+        fold_ids = student_ids[start:end]
+        fold_df = df[df["student_id"].isin(fold_ids)].copy()
+        folds.append(fold_df)
+
+    return folds
 
 
 def clean_text_columns(dataframe, columns, remove_words):
@@ -215,61 +267,75 @@ def clean_text_select_word_helper(s: str, word_set: set) -> str:
 
 
 def get_word_counts_per_class(text_series, labels):
-    """
-    text_series : pandas series of text (strings)
-    labels      : pandas series of class labels ("Gemini", "ChatGPT", "Claude")
+   """
+   text_series : pandas series of text (strings)
+   labels      : pandas series of class labels ("Gemini", "ChatGPT", "Claude")
 
-    Returns: DataFrame with columns:
-        word | count_gemini | count_chatgpt | count_claude | variance
-    """
 
-    # Initialize counters
-    counter_gemini = Counter()
-    counter_chatgpt = Counter()
-    counter_claude = Counter()
+   Returns: DataFrame with columns:
+       word | count_gemini | count_chatgpt | count_claude | variance
+   """
 
-    # Iterate through samples
-    for text, label in zip(text_series, labels):
-        if not isinstance(text, str):
-            continue
-        words = text.split()
 
-        if label == "gemini":
-            counter_gemini.update(words)
-        elif label == "chatgpt":
-            counter_chatgpt.update(words)
-        elif label == "claude":
-            counter_claude.update(words)
+   # Initialize counters
+   counter_gemini = Counter()
+   counter_chatgpt = Counter()
+   counter_claude = Counter()
 
-    # Create a unified vocabulary
-    all_words = (
-        set(counter_gemini.keys()) |
-        set(counter_chatgpt.keys()) |
-        set(counter_claude.keys())
-    )
 
-    rows = []
-    for word in all_words:
-        g = counter_gemini.get(word, 0)
-        c = counter_chatgpt.get(word, 0)
-        a = counter_claude.get(word, 0)
+   # Iterate through samples
+   for text, label in zip(text_series, labels):
+       if not isinstance(text, str):
+           continue
+       words = text.split()
 
-        var = np.var([g, c, a])   # compute variance
 
-        rows.append({
-            "word": word,
-            "count_gemini": g,
-            "count_chatgpt": c,
-            "count_claude": a,
-            "variance": var
-        })
+       if label == "gemini":
+           counter_gemini.update(words)
+       elif label == "chatgpt":
+           counter_chatgpt.update(words)
+       elif label == "claude":
+           counter_claude.update(words)
 
-    df = pd.DataFrame(rows)
 
-    # Sort by variance descending
-    df = df.sort_values(by="variance", ascending=False).reset_index(drop=True)
+   # Create a unified vocabulary
+   all_words = (
+           set(counter_gemini.keys()) |
+           set(counter_chatgpt.keys()) |
+           set(counter_claude.keys())
+   )
 
-    return df
+
+   all_words = sorted(all_words)
+
+
+   rows = []
+   for word in all_words:
+       g = counter_gemini.get(word, 0)
+       c = counter_chatgpt.get(word, 0)
+       a = counter_claude.get(word, 0)
+
+
+       var = np.var([g, c, a])
+
+
+       rows.append({
+           "word": word,
+           "count_gemini": g,
+           "count_chatgpt": c,
+           "count_claude": a,
+           "variance": var
+       })
+
+
+   df = pd.DataFrame(rows)
+
+
+   # Sort by variance descending, then by word alphabetically for ties
+   df = df.sort_values(by=["variance", "word"], ascending=[False, True]).reset_index(drop=True)
+
+
+   return df
 
 
 def clean_selected_words(text, selected_words):
