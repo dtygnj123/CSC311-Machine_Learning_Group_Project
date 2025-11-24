@@ -126,6 +126,7 @@ def build_matrix_5_folds(threshold):
 
     # get full feature matrix for final training
     df_all = df.copy()
+    data_cleaning_and_split_refactored.remove_student_id(df_all)
     X_all, y_all = data_cleaning_and_split_refactored.split_label(df_all)
 
     return X_train_folds, y_train_folds, X_test, y_test, X_all, y_all
@@ -194,7 +195,7 @@ def train_random_forest():
     best_y_trainval = None
     best_X_test = None
     best_y_test = None
-    for threshold in range(40, 81, 2):
+    for threshold in range(78, 80, 2):
         print(f"start running threshold {threshold}")
         X_train_folds, y_train_folds, X_test, y_test, X_all, y_all = build_matrix_5_folds(threshold)
 
@@ -223,15 +224,15 @@ def train_random_forest():
                           (X_train5, y_train5, X_train_folds[4], y_train_folds[4], X_test, y_test)]
 
         # manual grid search
-        n_estimators_list = [300, 400, 500]
+        n_estimators_list = [300]
         # n_estimators_list = [500]
-        max_depth_list = [3, 4, 5, 6, 7, 8]
+        max_depth_list = [3]
         # max_depth_list = [6]
-        min_samples_leaf_list = [4, 5, 6, 7, 8]
+        min_samples_leaf_list = [4]
         # min_samples_leaf_list = [6]
-        max_features_list = ["sqrt", 0.5, 0.7]
+        max_features_list = ["sqrt"]
         # max_features_list = ["sqrt", 0.3]
-        criterion_list = ["gini", "entropy"]
+        criterion_list = ["entropy"]
         # criterion_list = ["gini"]
 
         ########################################
@@ -344,24 +345,13 @@ def train_random_forest():
     print(f"Validation accuracy: {best_acc:.3f}")
     print(f"Test accuracy: {best_acc_test_acc:.3f}")
 
+    feature_names = np.array(X_all.columns)
+    classes = best_model.classes_
+
     evaluate_split(best_model, best_X_trainval, best_y_trainval, split_name="Train+Validation")
     evaluate_split(best_model, best_X_test, best_y_test, split_name="Test")
 
-    # re-train best RF on all data (train+val+test) for final submission
-    final_rf = RandomForestClassifier(
-        n_estimators=best_params[0],
-        max_depth=best_params[1],
-        min_samples_leaf=best_params[2],
-        max_features=best_params[3],
-        criterion=best_params[4],
-        random_state=42,
-        n_jobs=-1,
-    )
-    final_rf.fit(X_all, y_all)
-
-    feature_names = np.array(X_all.columns)
-    classes = final_rf.classes_
-    return final_rf, feature_names, classes
+    return best_model, feature_names, classes
 
 
 def export_forest(rf, feature_name, classes, out_path="rf_model_params.npz"):
